@@ -27,75 +27,76 @@
                 <p id="welcome-msg" style="font-size: 0.8rem; color: var(--text-muted);"></p>
                 <p id="today-display" style="font-size: 0.75rem; color: var(--accent); font-weight: 500;"></p>
             </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center; margin-top: 1rem;">
+                <button id="show-stats-btn"
+                    style="background: rgba(0, 176, 155, 0.2); border: 1px solid var(--secondary); color: white; font-size: 0.7rem; padding: 6px 12px; border-radius: 8px; cursor: pointer;">📈
+                    전체 통계</button>
                 <button id="reset-month-btn"
-                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 0.65rem; padding: 4px 8px; border-radius: 6px; cursor: pointer;">이번
-                    달 초기화</button>
+                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 0.7rem; padding: 6px 12px; border-radius: 8px; cursor: pointer;">데이터
+                    초기화</button>
                 <button id="logout-btn"
-                    style="background: rgba(255,255,255,0.1); border: none; color: var(--text-muted); font-size: 0.7rem; padding: 4px 10px; border-radius: 8px; cursor: pointer;">로그아웃</button>
+                    style="background: rgba(255, 255, 255, 0.1); border: none; color: var(--text-muted); font-size: 0.7rem; padding: 6px 12px; border-radius: 8px; cursor: pointer;">로그아웃</button>
             </div>
-    </div>
-    </header>
+        </header>
 
-    <!-- Dashboard -->
-    <div class="glass-card stats-grid">
-        <div class="stat-item">
-            <div class="stat-label">사용한 식비</div>
-            <div class="stat-value" id="total-spent">0원</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-label">남은 예산</div>
-            <div class="stat-value remaining" id="total-remaining">200,000원</div>
-        </div>
-        <div class="stat-item"
-            style="grid-column: span 2; border-top: 1px solid var(--glass-border); margin-top: 0.5rem; padding-top: 1rem;">
-            <div class="stat-label" style="color: var(--accent);">🍱 이번 달 총 청구 금액 (페이백)</div>
-            <div class="stat-value" id="total-reimbursement" style="font-size: 1.5rem; color: var(--accent);">0원
+        <!-- Dashboard -->
+        <div class="glass-card stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">사용한 식비</div>
+                <div class="stat-value" id="total-spent">0원</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">남은 예산</div>
+                <div class="stat-value remaining" id="total-remaining">200,000원</div>
+            </div>
+            <div class="stat-item"
+                style="grid-column: span 2; border-top: 1px solid var(--glass-border); margin-top: 0.5rem; padding-top: 1rem;">
+                <div class="stat-label" style="color: var(--accent);">🍱 이번 달 총 청구 금액 (페이백)</div>
+                <div class="stat-value" id="total-reimbursement" style="font-size: 1.5rem; color: var(--accent);">0원
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="glass-card budget-gauge">
-        <div class="gauge-label">
-            <span>예산 소진율</span>
-            <span id="usage-percent">0%</span>
+        <div class="glass-card budget-gauge">
+            <div class="gauge-label">
+                <span>예산 소진율</span>
+                <span id="usage-percent">0%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="budget-progress"></div>
+            </div>
         </div>
-        <div class="progress-container">
-            <div class="progress-bar" id="budget-progress"></div>
+
+        <!-- Calendar -->
+        <div class="glass-card calendar-container">
+            <div class="calendar-header">
+                <button class="month-nav" id="prev-month">&lt;</button>
+                <h2 id="current-month-display" style="font-size: 1.1rem;">2024년 2월</h2>
+                <button class="month-nav" id="next-month">&gt;</button>
+            </div>
+            <div class="calendar-grid">
+                <div class="day-header">일</div>
+                <div class="day-header">월</div>
+                <div class="day-header">화</div>
+                <div class="day-header">수</div>
+                <div class="day-header">목</div>
+                <div class="day-header">금</div>
+                <div class="day-header">토</div>
+                <!-- Days will be inserted by JS -->
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+            <p>💡 날짜를 누르면 퀵 메뉴가 나타납니다</p>
         </div>
     </div>
 
-    <!-- Calendar -->
-    <div class="glass-card calendar-container">
-        <div class="calendar-header">
-            <button class="month-nav" id="prev-month">&lt;</button>
-            <h2 id="current-month-display" style="font-size: 1.1rem;">2024년 2월</h2>
-            <button class="month-nav" id="next-month">&gt;</button>
-        </div>
-        <div class="calendar-grid">
-            <div class="day-header">일</div>
-            <div class="day-header">월</div>
-            <div class="day-header">화</div>
-            <div class="day-header">수</div>
-            <div class="day-header">목</div>
-            <div class="day-header">금</div>
-            <div class="day-header">토</div>
-            <!-- Days will be inserted by JS -->
-        </div>
-    </div>
-
-    <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
-        <p>💡 날짜를 누르면 퀵 메뉴가 나타납니다</p>
-    </div>
-
-    </div>
-
-    <!-- Action Modal (Quick Menu) -->
+    <!-- Action Modal -->
     <div id="action-modal" class="modal">
         <div class="glass-card modal-content" style="max-width: 380px;">
             <h3 id="modal-date-display" style="margin-bottom: 1.2rem; text-align: center;">식사 선택</h3>
 
-            <div class="action-grid"
+            <div id="action-grid-main" class="action-grid"
                 style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.5rem;">
                 <button class="btn action-btn" data-type="cafeteria"
                     style="background: rgba(0, 176, 155, 0.2); border: 1px solid var(--secondary); height: 80px; font-size: 1rem;">
@@ -111,17 +112,15 @@
                 </button>
             </div>
 
-            <!-- Outing Input Section (Hidden by default) -->
+            <!-- Outing Input Section -->
             <div id="outing-input-section" class="hidden" style="margin-bottom: 1.5rem;">
                 <div style="margin-bottom: 1rem;">
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">식사 시간</p>
                     <div style="display: flex; gap: 0.5rem;" id="time-selection">
                         <button class="btn time-btn active" data-time="lunch"
-                            style="flex: 1; padding: 0.6rem; font-size: 0.85rem; background: rgba(255, 126, 95, 0.2); border: 1px solid var(--primary); color: white;">☀️
-                            점심</button>
+                            style="flex: 1; padding: 0.6rem; font-size: 0.85rem;">☀️ 점심</button>
                         <button class="btn time-btn" data-time="dinner"
-                            style="flex: 1; padding: 0.6rem; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-muted);">🌙
-                            저녁</button>
+                            style="flex: 1; padding: 0.6rem; font-size: 0.85rem;">🌙 저녁</button>
                     </div>
                 </div>
                 <div class="input-container" style="margin-bottom: 1rem;">
@@ -162,19 +161,16 @@
         </div>
     </div>
 
-    <!-- History Management Modal -->
+    <!-- History Modal -->
     <div id="history-modal" class="modal">
         <div class="glass-card modal-content"
             style="max-width: 400px; height: 80vh; display: flex; flex-direction: column;">
             <h3 style="margin-bottom: 1rem; text-align: center;">목록 관리</h3>
-
             <div style="flex: 1; overflow-y: auto; padding-right: 5px;">
                 <h4 style="font-size: 0.9rem; color: var(--primary); margin-bottom: 1rem;">카드사 목록</h4>
                 <div id="card-history-list" style="margin-bottom: 2rem;"></div>
-
                 <h4 style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 1rem;">식당 목록</h4>
                 <div id="place-history-list" style="margin-bottom: 2rem;"></div>
-
                 <h4 style="font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem;">데이터 백업/복구</h4>
                 <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
                     <button id="export-json-btn" class="btn"
@@ -186,39 +182,35 @@
                     <input type="file" id="import-file-input" style="display: none;" accept=".json">
                 </div>
             </div>
-
             <button class="btn" style="margin-top: 1rem; background: rgba(255,255,255,0.1);"
                 id="history-modal-close">닫기</button>
         </div>
-        <!-- Statistics Modal -->
-        <div id="stats-modal" class="modal">
-            <div class="glass-card modal-content"
-                style="max-width: 450px; height: 80vh; display: flex; flex-direction: column;">
-                <h3 style="margin-bottom: 1.2rem; text-align: center; color: var(--accent);">🏆 최애 식당 순위 (전체)</h3>
+    </div>
 
-                <div style="flex: 1; overflow-y: auto;">
-                    <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
-                        <thead>
-                            <tr style="color: var(--text-muted); border-bottom: 1px solid var(--glass-border);">
-                                <th style="padding: 10px; text-align: left;">순위</th>
-                                <th style="padding: 10px; text-align: left;">식당명</th>
-                                <th style="padding: 10px; text-align: right;">방문 횟수</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stats-list-body">
-                            <!-- Stats rows inserted by JS -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <button class="btn" style="margin-top: 1.5rem; background: rgba(255,255,255,0.1);"
-                    id="stats-modal-close">닫기</button>
+    <!-- Stats Modal -->
+    <div id="stats-modal" class="modal">
+        <div class="glass-card modal-content"
+            style="max-width: 450px; height: 80vh; display: flex; flex-direction: column;">
+            <h3 style="margin-bottom: 1.2rem; text-align: center; color: var(--accent);">🏆 최애 식당 순위 (전체)</h3>
+            <div style="flex: 1; overflow-y: auto;">
+                <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
+                    <thead>
+                        <tr style="color: var(--text-muted); border-bottom: 1px solid var(--glass-border);">
+                            <th style="padding: 10px; text-align: left;">순위</th>
+                            <th style="padding: 10px; text-align: left;">식당명</th>
+                            <th style="padding: 10px; text-align: right;">방문 횟수</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-list-body"></tbody>
+                </table>
             </div>
+            <button class="btn" style="margin-top: 1.5rem; background: rgba(255,255,255,0.1);"
+                id="stats-modal-close">닫기</button>
         </div>
+    </div>
 
-        <div class="toast" id="save-toast">데이터가 저장되었습니다!</div>
-
-        <script src="app.js"></script>
+    <div class="toast" id="save-toast">데이터가 저장되었습니다!</div>
+    <script src="app.js"></script>
 </body>
 
 </html>
