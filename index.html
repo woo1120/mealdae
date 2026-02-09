@@ -88,28 +88,6 @@
         <p>💡 날짜를 누르면 퀵 메뉴가 나타납니다</p>
     </div>
 
-    <!-- Weekly Analysis -->
-    <div class="glass-card weekly-container" style="margin-top: 1.5rem; padding: 1.2rem;">
-        <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--accent);">📊 주간 예산 분석</h3>
-        <div id="weekly-table-container" style="overflow-x: auto;">
-            <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
-                <thead>
-                    <tr style="color: var(--text-muted); border-bottom: 1px solid var(--glass-border);">
-                        <th style="padding: 8px; text-align: left;">주차</th>
-                        <th style="padding: 8px; text-align: right;">이번주 지출</th>
-                        <th style="padding: 8px; text-align: right;">권장 지출액</th>
-                    </tr>
-                </thead>
-                <tbody id="weekly-stats-body">
-                    <!-- Weeks inserted by JS -->
-                </tbody>
-            </table>
-        </div>
-        <div id="weekly-prediction"
-            style="margin-top: 1rem; font-size: 0.8rem; text-align: center; color: var(--secondary);">
-            <!-- Prediction text inserted by JS -->
-        </div>
-    </div>
     </div>
 
     <!-- Action Modal (Quick Menu) -->
@@ -212,11 +190,35 @@
             <button class="btn" style="margin-top: 1rem; background: rgba(255,255,255,0.1);"
                 id="history-modal-close">닫기</button>
         </div>
-    </div>
+        <!-- Statistics Modal -->
+        <div id="stats-modal" class="modal">
+            <div class="glass-card modal-content"
+                style="max-width: 450px; height: 80vh; display: flex; flex-direction: column;">
+                <h3 style="margin-bottom: 1.2rem; text-align: center; color: var(--accent);">🏆 최애 식당 순위 (전체)</h3>
 
-    <div class="toast" id="save-toast">데이터가 저장되었습니다!</div>
+                <div style="flex: 1; overflow-y: auto;">
+                    <table style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
+                        <thead>
+                            <tr style="color: var(--text-muted); border-bottom: 1px solid var(--glass-border);">
+                                <th style="padding: 10px; text-align: left;">순위</th>
+                                <th style="padding: 10px; text-align: left;">식당명</th>
+                                <th style="padding: 10px; text-align: right;">방문 횟수</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats-list-body">
+                            <!-- Stats rows inserted by JS -->
+                        </tbody>
+                    </table>
+                </div>
 
-    <script src="app.js"></script>
+                <button class="btn" style="margin-top: 1.5rem; background: rgba(255,255,255,0.1);"
+                    id="stats-modal-close">닫기</button>
+            </div>
+        </div>
+
+        <div class="toast" id="save-toast">데이터가 저장되었습니다!</div>
+
+        <script src="app.js"></script>
 </body>
 
 </html>

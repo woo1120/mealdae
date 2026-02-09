@@ -56,8 +56,11 @@ const totalReimbursementEl = document.getElementById('total-reimbursement');
 const usagePercentEl = document.getElementById('usage-percent');
 const budgetProgress = document.getElementById('budget-progress');
 
-const weeklyStatsBody = document.getElementById('weekly-stats-body');
-const weeklyPredictionEl = document.getElementById('weekly-prediction');
+const showStatsBtn = document.getElementById('show-stats-btn');
+const statsModal = document.getElementById('stats-modal');
+const statsModalClose = document.getElementById('stats-modal-close');
+const statsListBody = document.getElementById('stats-list-body');
+
 const todayDisplayEl = document.getElementById('today-display');
 
 let activeDateKey = null;
@@ -188,7 +191,16 @@ resetMonthBtn.addEventListener('click', () => {
 prevMonthBtn.addEventListener('click', () => changeMonth(-1));
 nextMonthBtn.addEventListener('click', () => changeMonth(1));
 
-// No longer needs to be called here independently, renderCalendar will handle it
+// Statistics Listeners
+showStatsBtn.addEventListener('click', () => {
+    renderGlobalStats();
+    statsModal.style.display = 'flex';
+});
+
+statsModalClose.addEventListener('click', () => {
+    statsModal.style.display = 'none';
+});
+
 function changeMonth(delta) {
     let newDate = new Date(state.selectedYear, state.selectedMonth + delta, 1);
     state.selectedMonth = newDate.getMonth();
@@ -270,6 +282,7 @@ function handleDayClick(dateKey) {
     // UI Reset
     outingInputSection.classList.add('hidden');
     modalSaveOutingBtn.classList.add('hidden');
+    document.querySelector('.action-grid').classList.remove('hidden');
 
     // Pre-fill if current is outing
     if (current && current.type === 'outing') {
@@ -282,13 +295,16 @@ function handleDayClick(dateKey) {
         timeBtns.forEach(b => {
             if (b.getAttribute('data-time') === targetTime) b.click();
         });
+
+        // Show details immediately if it's already an outing
+        document.querySelector('.action-grid').classList.add('hidden');
+        outingInputSection.classList.remove('hidden');
+        modalSaveOutingBtn.classList.remove('hidden');
     } else {
         priceInput.value = 10000;
         placeInput.value = '';
-        // Pre-fill with the most recent card from history
         const lastCard = state.history.cards.length > 0 ? state.history.cards[state.history.cards.length - 1] : '';
         cardInput.value = lastCard;
-        // Default to lunch
         timeBtns[0].click();
     }
 
@@ -604,113 +620,40 @@ function updateDashboard() {
     usagePercentEl.textContent = `${usagePercent}%`;
     budgetProgress.style.width = `${usagePercent}%`;
 
-    updateWeeklyAnalysis(remaining);
-}
-
-function updateWeeklyAnalysis(monthlyRemaining) {
-    weeklyStatsBody.innerHTML = '';
-    const today = new Date();
-    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
     // Update Today Display
     if (todayDisplayEl) {
+        const today = new Date();
         const days = ['일', '월', '화', '수', '목', '금', '토'];
         todayDisplayEl.textContent = `오늘은 ${today.getMonth() + 1}월 ${today.getDate()}일(${days[today.getDay()]})`;
     }
+}
 
-    const year = state.selectedYear;
-    const month = state.selectedMonth;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    // 1. Group days into weeks
-    const weeks = {};
-    for (let d = 1; d <= daysInMonth; d++) {
-        const firstDayOfMonth = new Date(year, month, 1).getDay();
-        const weekNum = Math.ceil((d + firstDayOfMonth) / 7);
-        if (!weeks[weekNum]) weeks[weekNum] = [];
-        weeks[weekNum].push(d);
-    }
-
-    // 2. Budget Distribution Calculation (FROM TODAY ONWARDS)
-    // Precise logic: All the money we HAVEN'T spent before today is what we have for (Today + Future)
-    let spentBeforeToday = 0;
-    let remainingWorkdaysTotal = 0; // Total workdays from today to end of month
-
-    for (let d = 1; d <= daysInMonth; d++) {
-        const dateObj = new Date(year, month, d);
-        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const data = state.mealData[dateKey];
-
-        // Past spending
-        if (dateObj < new Date().setHours(0, 0, 0, 0)) {
-            if (data) spentBeforeToday += data.price;
+function renderGlobalStats() {
+    const counts = {};
+    Object.values(state.mealData).forEach(m => {
+        if (m.type === 'outing' && m.place) {
+            counts[m.place] = (counts[m.place] || 0) + 1;
         }
+    });
 
-        // Future + Today workdays
-        if (dateObj >= new Date().setHours(0, 0, 0, 0)) {
-            const dayOfWeek = dateObj.getDay();
-            const isWorkday = (dayOfWeek !== 0 && dayOfWeek !== 6);
-            const isHoliday = data && data.type === 'holiday';
-            if (isWorkday && !isHoliday) {
-                remainingWorkdaysTotal++;
-            }
-        }
-    }
+    const sorted = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1]);
 
-    const budgetForFuture = BUDGET_LIMIT - spentBeforeToday;
-    const dailyAllowance = remainingWorkdaysTotal > 0 ? Math.floor(budgetForFuture / remainingWorkdaysTotal) : 0;
-
-    // 3. Render Weekly Table
-    Object.keys(weeks).forEach(wNum => {
-        let weeklySpent = 0;
-        let weeklyFutureWorkdays = 0;
-        let isPastWeek = true;
-        let isCurrentWeek = false;
-
-        weeks[wNum].forEach(d => {
-            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const data = state.mealData[dateKey];
-            if (data) weeklySpent += data.price;
-
-            const dateObj = new Date(year, month, d);
-            const dateMidnight = new Date(year, month, d).setHours(0, 0, 0, 0);
-            const todayMidnight = new Date().setHours(0, 0, 0, 0);
-
-            if (dateMidnight >= todayMidnight) {
-                isPastWeek = false;
-                const dayOfWeek = dateObj.getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6 && (!data || data.type !== 'holiday')) {
-                    weeklyFutureWorkdays++;
-                }
-            }
-            if (dateMidnight === todayMidnight) isCurrentWeek = true;
-        });
-
-        let weeklyRecommended = '';
-        let badge = '';
-
-        if (isPastWeek) {
-            weeklyRecommended = '-';
-            badge = '<span style="font-size: 0.6rem; padding: 2px 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-left: 5px; color: var(--text-muted);">종료</span>';
-        } else {
-            weeklyRecommended = `${(dailyAllowance * weeklyFutureWorkdays).toLocaleString()}원`;
-            if (isCurrentWeek) {
-                badge = '<span style="font-size: 0.6rem; padding: 2px 4px; background: rgba(0, 176, 155, 0.2); border: 1px solid var(--secondary); border-radius: 4px; margin-left: 5px; color: var(--secondary);">진행중</span>';
-            }
-        }
-
+    statsListBody.innerHTML = '';
+    sorted.forEach(([place, count], idx) => {
         const row = document.createElement('tr');
         row.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
         row.innerHTML = `
-            <style> #weekly-stats-body td { padding: 10px 8px; } </style>
-            <td>${wNum}주차${badge}</td>
-            <td style="text-align: right;">${weeklySpent.toLocaleString()}원</td>
-            <td style="text-align: right; color: var(--accent); font-weight: 600;">${weeklyRecommended}</td>
+            <td style="padding: 12px 10px; color: var(--accent); font-weight: bold;">${idx + 1}위</td>
+            <td style="padding: 12px 10px;">${place}</td>
+            <td style="padding: 12px 10px; text-align: right; color: var(--secondary);">${count}회</td>
         `;
-        weeklyStatsBody.appendChild(row);
+        statsListBody.appendChild(row);
     });
 
-    weeklyPredictionEl.innerHTML = `🌟 <b>${today.getMonth() + 1}월 ${today.getDate()}일</b> 기준, 남은 예산은 <b>${budgetForFuture.toLocaleString()}원</b>입니다.<br>오늘부터 하루 <b>${dailyAllowance.toLocaleString()}원</b>까지 사용 가능합니다.`;
+    if (sorted.length === 0) {
+        statsListBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 2rem; color: var(--text-muted);">아직 외식 기록이 없습니다.</td></tr>';
+    }
 }
 
 function showToast(msg) {
