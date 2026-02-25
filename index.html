@@ -28,6 +28,9 @@
                 <p id="today-display" style="font-size: 0.75rem; color: var(--accent); font-weight: 500;"></p>
             </div>
             <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center; margin-top: 1rem;">
+                <button id="show-reimbursement-btn"
+                    style="background: rgba(254, 180, 123, 0.2); border: 1px solid var(--accent); color: white; font-size: 0.7rem; padding: 6px 12px; border-radius: 8px; cursor: pointer;">�
+                    청구 내역</button>
                 <button id="show-stats-btn"
                     style="background: rgba(0, 176, 155, 0.2); border: 1px solid var(--secondary); color: white; font-size: 0.7rem; padding: 6px 12px; border-radius: 8px; cursor: pointer;">📈
                     전체 통계</button>
@@ -206,6 +209,41 @@
             </div>
             <button class="btn" style="margin-top: 1.5rem; background: rgba(255,255,255,0.1);"
                 id="stats-modal-close">닫기</button>
+        </div>
+    </div>
+
+    <!-- Reimbursement Modal -->
+    <div id="reimbursement-modal" class="modal">
+        <div class="glass-card modal-content"
+            style="max-width: 450px; height: 80vh; display: flex; flex-direction: column;">
+            <h3 id="reimbursement-title" style="margin-bottom: 1.2rem; text-align: center; color: var(--accent);">💰 비용
+                청구 내역</h3>
+
+            <div style="flex: 1; overflow-y: auto;">
+                <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+                    <thead>
+                        <tr style="color: var(--text-muted); border-bottom: 1px solid var(--glass-border);">
+                            <th style="padding: 10px; text-align: left;">날짜</th>
+                            <th style="padding: 10px; text-align: left;">식당명</th>
+                            <th style="padding: 10px; text-align: left;">카드</th>
+                            <th style="padding: 10px; text-align: right;">가격</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reimbursement-list-body">
+                        <!-- Reimbursement rows inserted by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div
+                style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid var(--glass-border); display: flex; justify-content: space-between; align-items: baseline;">
+                <span style="font-weight: bold; color: var(--text-muted);">총계</span>
+                <span id="reimbursement-total"
+                    style="font-size: 1.4rem; font-weight: 800; color: var(--accent);">0원</span>
+            </div>
+
+            <button class="btn" style="margin-top: 1.5rem; background: rgba(255,255,255,0.1);"
+                id="reimbursement-modal-close">닫기</button>
         </div>
     </div>
 

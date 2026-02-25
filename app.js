@@ -58,6 +58,13 @@ const statsListBody = document.getElementById('stats-list-body');
 
 const totalSpentEl = document.getElementById('total-spent');
 const totalRemainingEl = document.getElementById('total-remaining');
+
+const showReimbursementBtn = document.getElementById('show-reimbursement-btn');
+const reimbursementModal = document.getElementById('reimbursement-modal');
+const reimbursementModalClose = document.getElementById('reimbursement-modal-close');
+const reimbursementListBody = document.getElementById('reimbursement-list-body');
+const reimbursementTotalEl = document.getElementById('reimbursement-total');
+const reimbursementTitleEl = document.getElementById('reimbursement-title');
 const totalReimbursementEl = document.getElementById('total-reimbursement');
 const usagePercentEl = document.getElementById('usage-percent');
 const budgetProgress = document.getElementById('budget-progress');
@@ -100,6 +107,17 @@ logoutBtn.addEventListener('click', () => {
 
 prevMonthBtn.addEventListener('click', () => changeMonth(-1));
 nextMonthBtn.addEventListener('click', () => changeMonth(1));
+
+// Reimbursement
+if (showReimbursementBtn) {
+    showReimbursementBtn.addEventListener('click', () => {
+        renderReimbursementList();
+        reimbursementModal.style.display = 'flex';
+    });
+}
+if (reimbursementModalClose) {
+    reimbursementModalClose.addEventListener('click', () => reimbursementModal.style.display = 'none');
+}
 
 function changeMonth(delta) {
     let newDate = new Date(state.selectedYear, state.selectedMonth + delta, 1);
@@ -407,6 +425,47 @@ function updateDashboard() {
     budgetProgress.style.width = `${pct}%`;
     const today = new Date();
     todayDisplayEl.textContent = `오늘은 ${today.getMonth() + 1}월 ${today.getDate()}일(${['일', '월', '화', '수', '목', '금', '토'][today.getDay()]})`;
+}
+
+function renderReimbursementList() {
+    const list = [];
+    let total = 0;
+    const year = state.selectedYear;
+    const month = state.selectedMonth + 1;
+
+    if (reimbursementTitleEl) reimbursementTitleEl.textContent = `${month}월 비용 청구 내역`;
+
+    Object.entries(state.mealData).forEach(([dateKey, data]) => {
+        const [y, m, d] = dateKey.split('-').map(Number);
+        if (y === year && m === month && data.type === 'outing') {
+            list.push({
+                date: `${m}/${d}`,
+                place: data.place || '-',
+                card: data.card || '-',
+                price: data.price || 0
+            });
+            total += (data.price || 0);
+        }
+    });
+
+    list.sort((a, b) => {
+        const dayA = parseInt(a.date.split('/')[1]);
+        const dayB = parseInt(b.date.split('/')[1]);
+        return dayA - dayB;
+    });
+
+    if (reimbursementListBody) {
+        reimbursementListBody.innerHTML = list.length ? list.map(item => `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding:10px;">${item.date}</td>
+                <td style="padding:10px;">${item.place}</td>
+                <td style="padding:10px;">${item.card}</td>
+                <td style="padding:10px; text-align:right;">${item.price.toLocaleString()}원</td>
+            </tr>
+        `).join('') : '<tr><td colspan="4" style="text-align:center; padding:2rem; color:#94a3b8;">청구할 내역이 없습니다.</td></tr>';
+    }
+
+    if (reimbursementTotalEl) reimbursementTotalEl.textContent = `${total.toLocaleString()}원`;
 }
 
 function renderGlobalStats() {
