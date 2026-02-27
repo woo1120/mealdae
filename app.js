@@ -415,26 +415,28 @@ function sendReimbursementEmail() {
         return ok;
     };
 
-    if (isAndroid) {
-        // Android: Avoid Blobs/ClipboardItem as they are async/unreliable. Use Sync copy.
-        copySync(plainBody);
+    const attemptCopy = async () => {
+        try {
+            if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+                const type = "text/html";
+                const blob = new Blob([htmlBody], { type });
+                const data = [new ClipboardItem({
+                    [type]: blob,
+                    ["text/plain"]: new Blob([plainBody], { type: "text/plain" })
+                })];
+                await navigator.clipboard.write(data);
+                return true;
+            }
+        } catch (e) {
+            console.warn('HTML copy failed, falling back to plain text', e);
+        }
+        return copySync(plainBody);
+    };
+
+    attemptCopy().then(() => {
         window.location.href = mailtoUrl;
         showSuccessFeedback();
-    } else {
-        // iPhone / Desktop: Try Rich HTML Copy
-        const type = "text/html";
-        const blob = new Blob([htmlBody], { type });
-        const data = [new ClipboardItem({ [type]: blob, ["text/plain"]: new Blob([plainBody], { type: "text/plain" }) })];
-        navigator.clipboard.write(data).then(() => {
-            window.location.href = mailtoUrl;
-            showSuccessFeedback();
-        }).catch(() => {
-            // Fallback for non-Android browsers that fail HTML copy
-            copySync(plainBody);
-            window.location.href = mailtoUrl;
-            showSuccessFeedback();
-        });
-    }
+    });
 }
 
 function renderGlobalStats() {
