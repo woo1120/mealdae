@@ -475,6 +475,7 @@ function renderReimbursementList() {
 function sendReimbursementEmail() {
     const year = state.selectedYear;
     const month = state.selectedMonth + 1;
+    const nl = '\r\n'; // CRLF required for email line breaks
 
     const list = [];
     let total = 0;
@@ -487,18 +488,24 @@ function sendReimbursementEmail() {
     });
     list.sort((a, b) => a.day - b.day);
 
-    // Build plain-text table rows
-    const pad = (s, len) => String(s).padEnd(len);
-    const header = `날짜        식당               금액\n` +
-        `---------- ------------------ ---------\n`;
-    const rows = list.map(item => {
-        const dateStr = `${month}월 ${String(item.day).padStart(2, '0')}일`;
+    // Build pipe-table rows
+    const tableHeader = `| 날짜          | 식당           | 금액          |`;
+    const tableSep = `| ------------- | -------------- | ------------- |`;
+    const tableRows = list.map(item => {
+        const dateStr = `${String(month).padStart(2, '0')}월 ${String(item.day).padStart(2, '0')}일`;
         const priceStr = item.price.toLocaleString() + '원';
-        return `${pad(dateStr, 11)}${pad(item.place, 19)}${priceStr}`;
-    }).join('\n');
-    const totalRow = `\n합계                              ${total.toLocaleString()}원`;
+        return `| ${dateStr.padEnd(13)} | ${item.place.padEnd(14)} | ${priceStr.padEnd(13)} |`;
+    }).join(nl);
+    const tableTotal = `| 합계          |                | ${total.toLocaleString().padEnd(13)}원 |`;
 
-    const body = `안녕하세요 본부장님\n\n${month}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n${header}${rows}${totalRow}`;
+    const table = [tableHeader, tableSep, tableRows, tableTotal].join(nl);
+
+    const body =
+        `안녕하세요 본부장님${nl}${nl}` +
+        `${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.${nl}${nl}` +
+        `감사합니다.${nl}${nl}` +
+        table;
+
     const subject = `${month}월 식대 청구`;
     const mailto = `mailto:ishan@wizvil.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
