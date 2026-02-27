@@ -66,6 +66,7 @@ const reimbursementListBody = document.getElementById('reimbursement-list-body')
 const reimbursementTotalEl = document.getElementById('reimbursement-total');
 const reimbursementTitleEl = document.getElementById('reimbursement-title');
 const emailReimbursementBtn = document.getElementById('email-reimbursement-btn');
+
 const totalReimbursementEl = document.getElementById('total-reimbursement');
 const usagePercentEl = document.getElementById('usage-percent');
 const budgetProgress = document.getElementById('budget-progress');
@@ -74,9 +75,7 @@ let activeDateKey = null;
 
 // --- Initialization ---
 async function init() {
-    if (state.userId) {
-        showApp();
-    }
+    if (state.userId) showApp();
 }
 
 async function showApp() {
@@ -116,12 +115,8 @@ if (showReimbursementBtn) {
         reimbursementModal.style.display = 'flex';
     });
 }
-if (reimbursementModalClose) {
-    reimbursementModalClose.addEventListener('click', () => reimbursementModal.style.display = 'none');
-}
-if (emailReimbursementBtn) {
-    emailReimbursementBtn.addEventListener('click', sendReimbursementEmail);
-}
+if (reimbursementModalClose) reimbursementModalClose.addEventListener('click', () => reimbursementModal.style.display = 'none');
+if (emailReimbursementBtn) emailReimbursementBtn.addEventListener('click', sendReimbursementEmail);
 
 function changeMonth(delta) {
     let newDate = new Date(state.selectedYear, state.selectedMonth + delta, 1);
@@ -269,7 +264,6 @@ function handleDayClick(dateKey) {
     const [y, m, d] = dateKey.split('-').map(Number);
     modalDateDisplay.textContent = `${m}월 ${d}일 식사 선택`;
 
-    // Reset UI for selection
     actionGridMain.classList.remove('hidden');
     outingInputSection.classList.add('hidden');
     modalSaveOutingBtn.classList.add('hidden');
@@ -283,7 +277,6 @@ function handleDayClick(dateKey) {
             if (b.getAttribute('data-time') === targetTime) b.classList.add('active');
             else b.classList.remove('active');
         });
-        // Direct to details
         actionGridMain.classList.add('hidden');
         outingInputSection.classList.remove('hidden');
         modalSaveOutingBtn.classList.remove('hidden');
@@ -329,8 +322,8 @@ function renderHistoryManagement() {
 
 function createHistoryItem(text, type, index) {
     const div = document.createElement('div');
-    div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 5px; font-size: 0.85rem;';
-    div.innerHTML = `<span>${text}</span><button style="background: none; border: none; color: #FF4B2B; cursor: pointer; font-size: 0.8rem;">삭제</button>`;
+    div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:8px;margin-bottom:5px;font-size:0.85rem;';
+    div.innerHTML = `<span>${text}</span><button style="background:none;border:none;color:#FF4B2B;cursor:pointer;font-size:0.8rem;">삭제</button>`;
     div.querySelector('button').onclick = () => {
         state.history[type].splice(index, 1);
         saveUserData();
@@ -385,7 +378,6 @@ async function loadUserData() {
             state.history = data.history || { places: [], cards: [] };
         }
     }
-    // Migration
     if (!state.history.places || state.history.places.length === 0) {
         const p = new Set(), c = new Set();
         Object.values(state.mealData).forEach(m => { if (m.place) p.add(m.place); if (m.card) c.add(m.card); });
@@ -442,40 +434,29 @@ function renderReimbursementList() {
     Object.entries(state.mealData).forEach(([dateKey, data]) => {
         const [y, m, d] = dateKey.split('-').map(Number);
         if (y === year && m === month && data.type === 'outing') {
-            list.push({
-                date: `${m}/${d}`,
-                place: data.place || '-',
-                card: data.card || '-',
-                price: data.price || 0
-            });
+            list.push({ date: `${m}/${d}`, place: data.place || '-', card: data.card || '-', price: data.price || 0 });
             total += (data.price || 0);
         }
     });
 
-    list.sort((a, b) => {
-        const dayA = parseInt(a.date.split('/')[1]);
-        const dayB = parseInt(b.date.split('/')[1]);
-        return dayA - dayB;
-    });
+    list.sort((a, b) => parseInt(a.date.split('/')[1]) - parseInt(b.date.split('/')[1]));
 
     if (reimbursementListBody) {
         reimbursementListBody.innerHTML = list.length ? list.map(item => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                 <td style="padding:10px;">${item.date}</td>
                 <td style="padding:10px;">${item.place}</td>
                 <td style="padding:10px;">${item.card}</td>
-                <td style="padding:10px; text-align:right;">${item.price.toLocaleString()}원</td>
-            </tr>
-        `).join('') : '<tr><td colspan="4" style="text-align:center; padding:2rem; color:#94a3b8;">청구할 내역이 없습니다.</td></tr>';
+                <td style="padding:10px;text-align:right;">${item.price.toLocaleString()}원</td>
+            </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:2rem;color:#94a3b8;">청구할 내역이 없습니다.</td></tr>';
     }
 
     if (reimbursementTotalEl) reimbursementTotalEl.textContent = `${total.toLocaleString()}원`;
 }
 
-function sendReimbursementEmail() {
+async function sendReimbursementEmail() {
     const year = state.selectedYear;
     const month = state.selectedMonth + 1;
-    const nl = '\r\n'; // CRLF required for email line breaks
 
     const list = [];
     let total = 0;
@@ -488,28 +469,51 @@ function sendReimbursementEmail() {
     });
     list.sort((a, b) => a.day - b.day);
 
-    // Build pipe-table rows
-    const tableHeader = `| 날짜          | 식당           | 금액          |`;
-    const tableSep = `| ------------- | -------------- | ------------- |`;
-    const tableRows = list.map(item => {
+    const rowsHtml = list.map(item => {
         const dateStr = `${String(month).padStart(2, '0')}월 ${String(item.day).padStart(2, '0')}일`;
-        const priceStr = item.price.toLocaleString() + '원';
-        return `| ${dateStr.padEnd(13)} | ${item.place.padEnd(14)} | ${priceStr.padEnd(13)} |`;
-    }).join(nl);
-    const tableTotal = `| 합계          |                | ${total.toLocaleString().padEnd(13)}원 |`;
+        return `<tr>
+          <td style="border:1px solid #ccc;padding:8px 14px;">${dateStr}</td>
+          <td style="border:1px solid #ccc;padding:8px 14px;">${item.place}</td>
+          <td style="border:1px solid #ccc;padding:8px 14px;text-align:right;">${item.price.toLocaleString()}원</td>
+        </tr>`;
+    }).join('');
 
-    const table = [tableHeader, tableSep, tableRows, tableTotal].join(nl);
-
-    const body =
-        `안녕하세요 본부장님${nl}${nl}` +
-        `${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.${nl}${nl}` +
-        `감사합니다.${nl}${nl}` +
-        table;
+    const htmlBody = `<p>안녕하세요 본부장님</p>
+<p>${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.</p>
+<p>감사합니다.</p>
+<table style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc;padding:8px 14px;">날짜</th>
+      <th style="border:1px solid #ccc;padding:8px 14px;">식당</th>
+      <th style="border:1px solid #ccc;padding:8px 14px;">금액</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${rowsHtml}
+    <tr style="background:#f5f5f5;font-weight:bold;">
+      <td style="border:1px solid #ccc;padding:8px 14px;" colspan="2">합계</td>
+      <td style="border:1px solid #ccc;padding:8px 14px;text-align:right;">${total.toLocaleString()}원</td>
+    </tr>
+  </tbody>
+</table>`;
 
     const subject = `${month}월 식대 청구`;
-    const mailto = `mailto:ishan@wizvil.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const btn = document.getElementById('email-reimbursement-btn');
 
-    window.location.href = mailto;
+    try {
+        const blob = new Blob([htmlBody], { type: 'text/html' });
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+        window.location.href = `mailto:ishan@wizvil.com?subject=${encodeURIComponent(subject)}`;
+        if (btn) {
+            const orig = btn.textContent;
+            btn.textContent = '✅ 복사됨! 메일 본문에 Ctrl+V';
+            btn.style.background = '#10b981';
+            setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 4000);
+        }
+    } catch (e) {
+        alert('클립보드 복사 권한이 없습니다. 브라우저에서 허용해 주세요.');
+    }
 }
 
 function renderGlobalStats() {
@@ -517,11 +521,11 @@ function renderGlobalStats() {
     Object.values(state.mealData).forEach(m => { if (m.type === 'outing' && m.place) c[m.place] = (c[m.place] || 0) + 1; });
     const s = Object.entries(c).sort((a, b) => b[1] - a[1]);
     statsListBody.innerHTML = s.length ? s.map(([p, n], i) => `
-        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <td style="padding:12px 10px; color:#FEB47B; font-weight:bold;">${i + 1}위</td>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:12px 10px;color:#FEB47B;font-weight:bold;">${i + 1}위</td>
             <td style="padding:12px 10px;">${p}</td>
-            <td style="padding:12px 10px; text-align:right; color:#00B09B;">${n}회</td>
-        </tr>`).join('') : '<tr><td colspan="3" style="text-align:center; padding:2rem; color:#94a3b8;">기록 없음</td></tr>';
+            <td style="padding:12px 10px;text-align:right;color:#00B09B;">${n}회</td>
+        </tr>`).join('') : '<tr><td colspan="3" style="text-align:center;padding:2rem;color:#94a3b8;">기록 없음</td></tr>';
 }
 
 exportJsonBtn.onclick = () => {
