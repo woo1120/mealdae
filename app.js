@@ -381,8 +381,10 @@ function sendReimbursementEmail() {
     const plainRows = list.map(i =>
         `${String(month).padStart(2, '0')}월 ${String(i.day).padStart(2, '0')}일\t${i.place}\t${i.price.toLocaleString()}원`
     ).join('\n');
+    const cafeteriaTotal = cafeteriaCount * CAFETERIA_PRICE;
+    const grandTotal = cafeteriaTotal + total;
     const plainBody =
-        `안녕하세요 본부장님\n\n${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n구내식당: ${cafeteriaCount}회   외부식사: ${list.length}회\n\n날짜\t식당\t금액\n${plainRows}\n합계\t\t${total.toLocaleString()}원`;
+        `안녕하세요 본부장님\n\n${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n구내: ${cafeteriaCount}회 (${cafeteriaTotal.toLocaleString()}원), 외부: ${list.length}회 (${total.toLocaleString()}원)  총 ${grandTotal.toLocaleString()}원 / 예산 ${BUDGET_LIMIT.toLocaleString()}원\n\n날짜\t식당\t금액\n${plainRows}\n합계\t\t${total.toLocaleString()}원`;
 
     const subject = encodeURIComponent(`${month}월 식대 청구`);
 
