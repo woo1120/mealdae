@@ -408,40 +408,46 @@ function sendReimbursementEmail() {
         setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 3000);
     };
 
-    // Synchronous copy for Android (execCommand)
-    const copySync = (text) => {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.fixed = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '0';
-        document.body.appendChild(ta);
-        ta.focus(); ta.select();
-        let ok = false; try { ok = document.execCommand('copy'); } catch (e) { }
-        document.body.removeChild(ta);
+    // Unified Rich HTML Copy (Hidden Element method - most compatible for mobile)
+    const copyRichHtml = (html, text) => {
+        const hiddenDiv = document.createElement('div');
+        hiddenDiv.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:pre-wrap;';
+        hiddenDiv.innerHTML = html;
+        document.body.appendChild(hiddenDiv);
+
+        // Select the content
+        const range = document.createRange();
+        range.selectNode(hiddenDiv);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        let ok = false;
+        try {
+            ok = document.execCommand('copy');
+        } catch (e) {
+            console.warn('execCommand failed', e);
+        }
+
+        // Cleanup
+        selection.removeAllRanges();
+        document.body.removeChild(hiddenDiv);
+
+        // Modern fallback if exec failed
+        if (!ok && navigator.clipboard && navigator.clipboard.write) {
+            const data = [new ClipboardItem({
+                "text/html": new Blob([html], { type: "text/html" }),
+                "text/plain": new Blob([text], { type: "text/plain" })
+            })];
+            navigator.clipboard.write(data);
+            ok = true;
+        }
         return ok;
     };
 
-    const attemptCopy = async () => {
-        try {
-            if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
-                const type = "text/html";
-                const blob = new Blob([htmlBody], { type });
-                const data = [new ClipboardItem({
-                    [type]: blob,
-                    ["text/plain"]: new Blob([plainBody], { type: "text/plain" })
-                })];
-                await navigator.clipboard.write(data);
-                return true;
-            }
-        } catch (e) {
-            console.warn('HTML copy failed, falling back to plain text', e);
-        }
-        return copySync(plainBody);
-    };
-
-    attemptCopy().then(() => {
-        window.location.href = mailtoUrl;
-        showSuccessFeedback();
-    });
+    copyRichHtml(htmlBody, plainBody);
+    window.location.href = mailtoUrl;
+    showSuccessFeedback();
 }
 
 function renderGlobalStats() {
