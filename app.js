@@ -537,21 +537,36 @@ async function sendReimbursementEmail() {
         overlay.querySelector('textarea').select();
     };
 
-    try {
-        // Tier 1: HTML clipboard (desktop Chrome / Edge)
-        const blob = new Blob([htmlBody], { type: 'text/html' });
-        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
-        showSuccess();
-    } catch (_) {
+    // Synchronous execCommand copy (preserves user gesture on Android)
+    const copyWithExecCommand = (text) => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+    };
+
+    // Try HTML clipboard first (desktop), then execCommand (Android), then modal
+    (async () => {
+        let copied = false;
         try {
-            // Tier 2: Plain text clipboard (Android Chrome)
-            await navigator.clipboard.writeText(plainBody);
+            const blob = new Blob([htmlBody], { type: 'text/html' });
+            await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+            copied = true;
+        } catch (_) {
+            copied = copyWithExecCommand(plainBody);
+        }
+
+        if (copied) {
             showSuccess();
-        } catch (__) {
-            // Tier 3: Show fallback modal for manual copy
+        } else {
             showFallbackModal();
         }
-    }
+    })();
 }
 
 function renderGlobalStats() {
