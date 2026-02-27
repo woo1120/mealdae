@@ -65,6 +65,7 @@ const reimbursementModalClose = document.getElementById('reimbursement-modal-clo
 const reimbursementListBody = document.getElementById('reimbursement-list-body');
 const reimbursementTotalEl = document.getElementById('reimbursement-total');
 const reimbursementTitleEl = document.getElementById('reimbursement-title');
+const emailReimbursementBtn = document.getElementById('email-reimbursement-btn');
 const totalReimbursementEl = document.getElementById('total-reimbursement');
 const usagePercentEl = document.getElementById('usage-percent');
 const budgetProgress = document.getElementById('budget-progress');
@@ -117,6 +118,9 @@ if (showReimbursementBtn) {
 }
 if (reimbursementModalClose) {
     reimbursementModalClose.addEventListener('click', () => reimbursementModal.style.display = 'none');
+}
+if (emailReimbursementBtn) {
+    emailReimbursementBtn.addEventListener('click', sendReimbursementEmail);
 }
 
 function changeMonth(delta) {
@@ -466,6 +470,39 @@ function renderReimbursementList() {
     }
 
     if (reimbursementTotalEl) reimbursementTotalEl.textContent = `${total.toLocaleString()}원`;
+}
+
+function sendReimbursementEmail() {
+    const year = state.selectedYear;
+    const month = state.selectedMonth + 1;
+
+    const list = [];
+    let total = 0;
+    Object.entries(state.mealData).forEach(([dateKey, data]) => {
+        const [y, m, d] = dateKey.split('-').map(Number);
+        if (y === year && m === month && data.type === 'outing') {
+            list.push({ day: d, place: data.place || '-', price: data.price || 0 });
+            total += (data.price || 0);
+        }
+    });
+    list.sort((a, b) => a.day - b.day);
+
+    // Build plain-text table rows
+    const pad = (s, len) => String(s).padEnd(len);
+    const header = `날짜        식당               금액\n` +
+        `---------- ------------------ ---------\n`;
+    const rows = list.map(item => {
+        const dateStr = `${month}월 ${String(item.day).padStart(2, '0')}일`;
+        const priceStr = item.price.toLocaleString() + '원';
+        return `${pad(dateStr, 11)}${pad(item.place, 19)}${priceStr}`;
+    }).join('\n');
+    const totalRow = `\n합계                              ${total.toLocaleString()}원`;
+
+    const body = `안녕하세요 본부장님\n\n${month}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n${header}${rows}${totalRow}`;
+    const subject = `${month}월 식대 청구`;
+    const mailto = `mailto:ishan@wizvil.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    window.location.href = mailto;
 }
 
 function renderGlobalStats() {
