@@ -387,13 +387,13 @@ function sendReimbursementEmail() {
         const dateStr = `${String(month).padStart(2, '0')}월 ${String(i.day).padStart(2, '0')}일`;
         return `<tr><td style="border:1px solid #ccc;padding:8px 14px;">${dateStr}</td><td style="border:1px solid #ccc;padding:8px 14px;">${i.place}</td><td style="border:1px solid #ccc;padding:8px 14px;text-align:right;">${i.price.toLocaleString()}원</td></tr>`;
     }).join('');
-    const htmlBody = `<p>안녕하세요 본부장님</p><p>${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.</p><p>감사합니다.</p><p>${summaryLine}</p><table style="border-collapse:collapse;font-family:sans-serif;font-size:14px;"><thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ccc;padding:8px 14px;">날짜</th><th style="border:1px solid #ccc;padding:8px 14px;">식당</th><th style="border:1px solid #ccc;padding:8px 14px;">금액</th></tr></thead><tbody>${rowsHtml}<tr style="background:#f5f5f5;font-weight:bold;"><td style="border:1px solid #ccc;padding:8px 14px;" colspan="2">합계</td><td style="border:1px solid #ccc;padding:8px 14px;text-align:right;">${outingTotal.toLocaleString()}원</td></tr></tbody></table>`;
+    const htmlBody = `<div style="background-color:white;color:black;padding:10px;"><p>안녕하세요 본부장님</p><p>${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.</p><p>감사합니다.</p><p>${summaryLine}</p><br><table style="border-collapse:collapse;font-family:sans-serif;font-size:14px;color:black;"><thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ccc;padding:8px 14px;">날짜</th><th style="border:1px solid #ccc;padding:8px 14px;">식당</th><th style="border:1px solid #ccc;padding:8px 14px;">금액</th></tr></thead><tbody>${rowsHtml}<tr style="background:#f5f5f5;font-weight:bold;"><td style="border:1px solid #ccc;padding:8px 14px;" colspan="2">합계</td><td style="border:1px solid #ccc;padding:8px 14px;text-align:right;">${outingTotal.toLocaleString()}원</td></tr></tbody></table></div>`;
 
     // 2. Plain Text Body for Fallback (Android/Mobile)
     const plainRows = list.map(i =>
         `${String(month).padStart(2, '0')}월 ${String(i.day).padStart(2, '0')}일\t${i.place}\t${i.price.toLocaleString()}원`
     ).join('\n');
-    const plainBody = `안녕하세요 본부장님\n\n${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n${summaryLine}\n\n날짜\t식당\t금액\n${plainRows}\n합계\t\t${outingTotal.toLocaleString()}원`;
+    const plainBody = `안녕하세요 본부장님\n\n${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n${summaryLine}\n\n\n날짜\t식당\t금액\n${plainRows}\n합계\t\t${outingTotal.toLocaleString()}원`;
 
     const subject = encodeURIComponent(`${month}월 식대 청구`);
     const mailtoUrl = `mailto:ishan@wizvil.com?subject=${subject}`;
@@ -411,7 +411,8 @@ function sendReimbursementEmail() {
     // Unified Rich HTML Copy (Hidden Element method - most compatible for mobile)
     const copyRichHtml = (html, text) => {
         const hiddenDiv = document.createElement('div');
-        hiddenDiv.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:pre-wrap;';
+        // Force white background and black text to prevent inheriting dark theme styles during copy
+        hiddenDiv.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:pre-wrap;background-color:white;color:black;';
         hiddenDiv.innerHTML = html;
         document.body.appendChild(hiddenDiv);
 
