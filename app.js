@@ -74,9 +74,7 @@ const budgetProgress = document.getElementById('budget-progress');
 let activeDateKey = null;
 
 // --- Initialization ---
-async function init() {
-    if (state.userId) showApp();
-}
+async function init() { if (state.userId) showApp(); }
 
 async function showApp() {
     loginOverlay.classList.add('hidden');
@@ -88,27 +86,18 @@ async function showApp() {
 // --- Event Listeners ---
 loginBtn.addEventListener('click', async () => {
     const id = userIdInput.value.trim();
-    if (id) {
-        state.userId = id;
-        localStorage.setItem('meal_tracker_userid', id);
-        await showApp();
-    } else {
-        alert('아이디를 입력해주세요!');
-    }
+    if (id) { state.userId = id; localStorage.setItem('meal_tracker_userid', id); await showApp(); }
+    else alert('아이디를 입력해주세요!');
 });
 
 logoutBtn.addEventListener('click', () => {
-    state.userId = '';
-    state.mealData = {};
-    state.history = { cards: [], places: [] };
-    localStorage.removeItem('meal_tracker_userid');
-    window.location.reload();
+    state.userId = ''; state.mealData = {}; state.history = { cards: [], places: [] };
+    localStorage.removeItem('meal_tracker_userid'); window.location.reload();
 });
 
 prevMonthBtn.addEventListener('click', () => changeMonth(-1));
 nextMonthBtn.addEventListener('click', () => changeMonth(1));
 
-// Reimbursement
 if (showReimbursementBtn) {
     showReimbursementBtn.addEventListener('click', () => {
         renderReimbursementList();
@@ -119,45 +108,24 @@ if (reimbursementModalClose) reimbursementModalClose.addEventListener('click', (
 if (emailReimbursementBtn) emailReimbursementBtn.addEventListener('click', sendReimbursementEmail);
 
 function changeMonth(delta) {
-    let newDate = new Date(state.selectedYear, state.selectedMonth + delta, 1);
-    state.selectedMonth = newDate.getMonth();
-    state.selectedYear = newDate.getFullYear();
-    renderCalendar();
-    updateDashboard();
+    let d = new Date(state.selectedYear, state.selectedMonth + delta, 1);
+    state.selectedMonth = d.getMonth(); state.selectedYear = d.getFullYear();
+    renderCalendar(); updateDashboard();
 }
 
 resetMonthBtn.addEventListener('click', () => {
-    if (confirm('이번 달 기록을 초기화하겠습니까?')) {
-        initializeMonthData();
-        renderCalendar();
-        updateDashboard();
-    }
+    if (confirm('이번 달 기록을 초기화하겠습니까?')) { initializeMonthData(); renderCalendar(); updateDashboard(); }
 });
 
-// Statistics
-if (showStatsBtn) {
-    showStatsBtn.addEventListener('click', () => {
-        renderGlobalStats();
-        statsModal.style.display = 'flex';
-    });
-}
+if (showStatsBtn) showStatsBtn.addEventListener('click', () => { renderGlobalStats(); statsModal.style.display = 'flex'; });
 if (statsModalClose) statsModalClose.addEventListener('click', () => statsModal.style.display = 'none');
-
-// Modal Close
 if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
-function closeModal() {
-    actionModal.style.display = 'none';
-    activeDateKey = null;
-}
 
-// History Modal
-manageHistoryBtn.addEventListener('click', () => {
-    renderHistoryManagement();
-    historyModal.style.display = 'flex';
-});
+function closeModal() { actionModal.style.display = 'none'; activeDateKey = null; }
+
+manageHistoryBtn.addEventListener('click', () => { renderHistoryManagement(); historyModal.style.display = 'flex'; });
 if (historyModalClose) historyModalClose.addEventListener('click', () => historyModal.style.display = 'none');
 
-// Outing Toggle Button Logic
 document.querySelectorAll('.action-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const type = btn.getAttribute('data-type');
@@ -167,39 +135,25 @@ document.querySelectorAll('.action-btn').forEach(btn => {
             modalSaveOutingBtn.classList.remove('hidden');
             priceInput.focus();
         } else if (type) {
-            const price = (type === 'cafeteria') ? CAFETERIA_PRICE : 0;
-            saveMeal(activeDateKey, type, price);
+            saveMeal(activeDateKey, type, type === 'cafeteria' ? CAFETERIA_PRICE : 0);
             closeModal();
         }
     });
 });
 
-// Time Buttons
-timeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        timeBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    });
-});
+timeBtns.forEach(btn => btn.addEventListener('click', () => {
+    timeBtns.forEach(b => b.classList.remove('active')); btn.classList.add('active');
+}));
 
-// Save Outing
 modalSaveOutingBtn.addEventListener('click', () => {
     const price = parseInt(priceInput.value);
     const place = placeInput.value.trim();
     const card = cardInput.value.trim();
-    const activeTimeBtn = document.querySelector('.time-btn.active');
-    const time = activeTimeBtn ? activeTimeBtn.getAttribute('data-time') : 'lunch';
-
+    const time = document.querySelector('.time-btn.active')?.getAttribute('data-time') || 'lunch';
     if (!isNaN(price)) {
         saveMeal(activeDateKey, 'outing', price, place, card, time);
-        if (place) {
-            state.history.places = state.history.places.filter(p => p !== place);
-            state.history.places.push(place);
-        }
-        if (card) {
-            state.history.cards = state.history.cards.filter(c => c !== card);
-            state.history.cards.push(card);
-        }
+        if (place) { state.history.places = state.history.places.filter(p => p !== place); state.history.places.push(place); }
+        if (card) { state.history.cards = state.history.cards.filter(c => c !== card); state.history.cards.push(card); }
         closeModal();
     }
 });
@@ -207,42 +161,30 @@ modalSaveOutingBtn.addEventListener('click', () => {
 modalDeleteBtn.addEventListener('click', () => {
     if (activeDateKey) {
         const [y, m, d] = activeDateKey.split('-').map(Number);
-        const dayOfWeek = new Date(y, m - 1, d).getDay();
-        const type = (dayOfWeek === 0 || dayOfWeek === 6) ? 'holiday' : 'cafeteria';
-        const price = (type === 'cafeteria') ? CAFETERIA_PRICE : 0;
-        saveMeal(activeDateKey, type, price);
+        const dow = new Date(y, m - 1, d).getDay();
+        const type = (dow === 0 || dow === 6) ? 'holiday' : 'cafeteria';
+        saveMeal(activeDateKey, type, type === 'cafeteria' ? CAFETERIA_PRICE : 0);
         closeModal();
     }
 });
 
-// --- Calendar Logic ---
+// --- Calendar ---
 function renderCalendar() {
     ensureMonthInitialized();
     const headers = Array.from(calendarGrid.querySelectorAll('.day-header'));
     calendarGrid.innerHTML = '';
     headers.forEach(h => calendarGrid.appendChild(h));
-
     monthDisplay.textContent = `${state.selectedYear}년 ${state.selectedMonth + 1}월`;
     const firstDay = new Date(state.selectedYear, state.selectedMonth, 1).getDay();
     const daysInMonth = new Date(state.selectedYear, state.selectedMonth + 1, 0).getDate();
-
-    for (let i = 0; i < firstDay; i++) {
-        const empty = document.createElement('div');
-        empty.className = 'day empty';
-        calendarGrid.appendChild(empty);
-    }
-
+    for (let i = 0; i < firstDay; i++) { const e = document.createElement('div'); e.className = 'day empty'; calendarGrid.appendChild(e); }
     const today = new Date();
     for (let d = 1; d <= daysInMonth; d++) {
         const dayEl = document.createElement('div');
         dayEl.className = 'day glass-card';
         const dateKey = `${state.selectedYear}-${String(state.selectedMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const dayData = state.mealData[dateKey];
-
-        const dayNum = document.createElement('span');
-        dayNum.textContent = d;
-        dayEl.appendChild(dayNum);
-
+        const dayNum = document.createElement('span'); dayNum.textContent = d; dayEl.appendChild(dayNum);
         if (dayData) {
             dayEl.classList.add(dayData.type);
             const priceEl = document.createElement('span');
@@ -250,9 +192,7 @@ function renderCalendar() {
             priceEl.textContent = (dayData.price && dayData.price > 0) ? `${dayData.price.toLocaleString()}원` : '';
             dayEl.appendChild(priceEl);
         }
-        if (today.getFullYear() === state.selectedYear && today.getMonth() === state.selectedMonth && today.getDate() === d) {
-            dayEl.classList.add('today');
-        }
+        if (today.getFullYear() === state.selectedYear && today.getMonth() === state.selectedMonth && today.getDate() === d) dayEl.classList.add('today');
         dayEl.onclick = () => handleDayClick(dateKey);
         calendarGrid.appendChild(dayEl);
     }
@@ -263,26 +203,19 @@ function handleDayClick(dateKey) {
     const current = state.mealData[dateKey];
     const [y, m, d] = dateKey.split('-').map(Number);
     modalDateDisplay.textContent = `${m}월 ${d}일 식사 선택`;
-
     actionGridMain.classList.remove('hidden');
     outingInputSection.classList.add('hidden');
     modalSaveOutingBtn.classList.add('hidden');
-
     if (current && current.type === 'outing') {
         priceInput.value = current.price || 10000;
         placeInput.value = current.place || '';
         cardInput.value = current.card || '';
-        const targetTime = current.time || 'lunch';
-        timeBtns.forEach(b => {
-            if (b.getAttribute('data-time') === targetTime) b.classList.add('active');
-            else b.classList.remove('active');
-        });
+        timeBtns.forEach(b => b.getAttribute('data-time') === (current.time || 'lunch') ? b.classList.add('active') : b.classList.remove('active'));
         actionGridMain.classList.add('hidden');
         outingInputSection.classList.remove('hidden');
         modalSaveOutingBtn.classList.remove('hidden');
     } else {
-        priceInput.value = 10000;
-        placeInput.value = '';
+        priceInput.value = 10000; placeInput.value = '';
         cardInput.value = state.history.cards.length > 0 ? state.history.cards[state.history.cards.length - 1] : '';
         timeBtns.forEach(b => b.classList.remove('active'));
         if (timeBtns[0]) timeBtns[0].classList.add('active');
@@ -290,7 +223,7 @@ function handleDayClick(dateKey) {
     actionModal.style.display = 'flex';
 }
 
-// --- Suggestions & History Management ---
+// --- Dropdown / History ---
 function setupDropdown(input, dropdown, type) {
     if (!input || !dropdown) return;
     input.onfocus = () => showDropdown(input, dropdown, type, input.value);
@@ -301,12 +234,11 @@ function setupDropdown(input, dropdown, type) {
 function showDropdown(input, dropdown, type, filterText = '') {
     const list = state.history[type] || [];
     const filtered = list.filter(item => item.toLowerCase().includes(filterText.toLowerCase()));
-    if (filtered.length === 0) { dropdown.classList.add('hidden'); return; }
+    if (!filtered.length) { dropdown.classList.add('hidden'); return; }
     dropdown.innerHTML = '';
     filtered.forEach(item => {
         const div = document.createElement('div');
-        div.className = 'dropdown-item';
-        div.textContent = item;
+        div.className = 'dropdown-item'; div.textContent = item;
         div.onmousedown = (e) => { e.preventDefault(); input.value = item; dropdown.classList.add('hidden'); };
         dropdown.appendChild(div);
     });
@@ -315,20 +247,16 @@ function showDropdown(input, dropdown, type, filterText = '') {
 
 function renderHistoryManagement() {
     cardHistoryList.innerHTML = '';
-    state.history.cards.forEach((card, idx) => cardHistoryList.appendChild(createHistoryItem(card, 'cards', idx)));
+    state.history.cards.forEach((c, i) => cardHistoryList.appendChild(createHistoryItem(c, 'cards', i)));
     placeHistoryList.innerHTML = '';
-    state.history.places.forEach((place, idx) => placeHistoryList.appendChild(createHistoryItem(place, 'places', idx)));
+    state.history.places.forEach((p, i) => placeHistoryList.appendChild(createHistoryItem(p, 'places', i)));
 }
 
 function createHistoryItem(text, type, index) {
     const div = document.createElement('div');
     div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px;background:rgba(255,255,255,0.05);border-radius:8px;margin-bottom:5px;font-size:0.85rem;';
     div.innerHTML = `<span>${text}</span><button style="background:none;border:none;color:#FF4B2B;cursor:pointer;font-size:0.8rem;">삭제</button>`;
-    div.querySelector('button').onclick = () => {
-        state.history[type].splice(index, 1);
-        saveUserData();
-        renderHistoryManagement();
-    };
+    div.querySelector('button').onclick = () => { state.history[type].splice(index, 1); saveUserData(); renderHistoryManagement(); };
     return div;
 }
 
@@ -339,23 +267,20 @@ document.addEventListener('mousedown', (e) => {
     }
 });
 
-// --- Data Management & Sync ---
+// --- Data ---
 async function saveMeal(dateKey, type, price, place = '', card = '', time = 'lunch') {
     state.mealData[dateKey] = { type, price, place, card, time };
-    await saveUserData();
-    renderCalendar();
-    updateDashboard();
+    await saveUserData(); renderCalendar(); updateDashboard();
 }
 
 async function saveUserData() {
-    const storageKey = `meal_data_${state.userId}`;
-    const dataToSave = { mealData: state.mealData, history: state.history };
-    localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+    const key = `meal_data_${state.userId}`;
+    const data = { mealData: state.mealData, history: state.history };
+    localStorage.setItem(key, JSON.stringify(data));
     if (window.location.protocol === 'file:') return;
     try {
         await fetch(`/api/data?userId=${encodeURIComponent(state.userId)}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dataToSave)
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
         });
     } catch (e) { console.warn('Sync failed'); }
 }
@@ -363,26 +288,17 @@ async function saveUserData() {
 async function loadUserData() {
     if (window.location.protocol !== 'file:') {
         try {
-            const response = await fetch(`/api/data?userId=${encodeURIComponent(state.userId)}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.mealData) { state.mealData = data.mealData; state.history = data.history || { places: [], cards: [] }; }
-            }
+            const r = await fetch(`/api/data?userId=${encodeURIComponent(state.userId)}`);
+            if (r.ok) { const d = await r.json(); if (d.mealData) { state.mealData = d.mealData; state.history = d.history || { places: [], cards: [] }; } }
         } catch (e) { }
     }
     const saved = localStorage.getItem(`meal_data_${state.userId}`);
-    if (saved) {
-        const data = JSON.parse(saved);
-        if (Object.keys(state.mealData).length === 0) {
-            state.mealData = data.mealData || {};
-            state.history = data.history || { places: [], cards: [] };
-        }
-    }
-    if (!state.history.places || state.history.places.length === 0) {
+    if (saved) { const d = JSON.parse(saved); if (!Object.keys(state.mealData).length) { state.mealData = d.mealData || {}; state.history = d.history || { places: [], cards: [] }; } }
+    if (!state.history.places || !state.history.places.length) {
         const p = new Set(), c = new Set();
         Object.values(state.mealData).forEach(m => { if (m.place) p.add(m.place); if (m.card) c.add(m.card); });
         state.history.places = Array.from(p); state.history.cards = Array.from(c);
-        if (state.history.places.length > 0) saveUserData();
+        if (state.history.places.length) saveUserData();
     }
     renderCalendar(); updateDashboard();
     setupDropdown(placeInput, placeDropdown, 'places');
@@ -390,11 +306,11 @@ async function loadUserData() {
 }
 
 function initializeMonthData() {
-    const dCount = new Date(state.selectedYear, state.selectedMonth + 1, 0).getDate();
-    for (let d = 1; d <= dCount; d++) {
+    const cnt = new Date(state.selectedYear, state.selectedMonth + 1, 0).getDate();
+    for (let d = 1; d <= cnt; d++) {
         const key = `${state.selectedYear}-${String(state.selectedMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const day = new Date(state.selectedYear, state.selectedMonth, d).getDay();
-        state.mealData[key] = (day === 0 || day === 6) ? { type: 'holiday', price: 0 } : { type: 'cafeteria', price: CAFETERIA_PRICE };
+        const dow = new Date(state.selectedYear, state.selectedMonth, d).getDay();
+        state.mealData[key] = (dow === 0 || dow === 6) ? { type: 'holiday', price: 0 } : { type: 'cafeteria', price: CAFETERIA_PRICE };
     }
     saveUserData();
 }
@@ -408,39 +324,29 @@ function updateDashboard() {
     let spent = 0, reimb = 0;
     Object.keys(state.mealData).forEach(key => {
         const [y, m] = key.split('-').map(Number);
-        if (y === state.selectedYear && m === (state.selectedMonth + 1)) {
-            const d = state.mealData[key]; spent += d.price;
-            if (d.type === 'outing') reimb += d.price;
-        }
+        if (y === state.selectedYear && m === state.selectedMonth + 1) { const d = state.mealData[key]; spent += d.price; if (d.type === 'outing') reimb += d.price; }
     });
     totalSpentEl.textContent = `${spent.toLocaleString()}원`;
     totalRemainingEl.textContent = `${(BUDGET_LIMIT - spent).toLocaleString()}원`;
     totalReimbursementEl.textContent = `${reimb.toLocaleString()}원`;
-    const pct = Math.min(100, Math.floor((spent / BUDGET_LIMIT) * 100));
-    usagePercentEl.textContent = `${pct}%`;
-    budgetProgress.style.width = `${pct}%`;
-    const today = new Date();
-    todayDisplayEl.textContent = `오늘은 ${today.getMonth() + 1}월 ${today.getDate()}일(${['일', '월', '화', '수', '목', '금', '토'][today.getDay()]})`;
+    const pct = Math.min(100, Math.floor(spent / BUDGET_LIMIT * 100));
+    usagePercentEl.textContent = `${pct}%`; budgetProgress.style.width = `${pct}%`;
+    const t = new Date();
+    todayDisplayEl.textContent = `오늘은 ${t.getMonth() + 1}월 ${t.getDate()}일(${['일', '월', '화', '수', '목', '금', '토'][t.getDay()]})`;
 }
 
 function renderReimbursementList() {
-    const list = [];
+    const list = [], year = state.selectedYear, month = state.selectedMonth + 1;
     let total = 0;
-    const year = state.selectedYear;
-    const month = state.selectedMonth + 1;
-
     if (reimbursementTitleEl) reimbursementTitleEl.textContent = `${month}월 비용 청구 내역`;
-
-    Object.entries(state.mealData).forEach(([dateKey, data]) => {
-        const [y, m, d] = dateKey.split('-').map(Number);
+    Object.entries(state.mealData).forEach(([key, data]) => {
+        const [y, m, d] = key.split('-').map(Number);
         if (y === year && m === month && data.type === 'outing') {
             list.push({ date: `${m}/${d}`, place: data.place || '-', card: data.card || '-', price: data.price || 0 });
-            total += (data.price || 0);
+            total += data.price || 0;
         }
     });
-
     list.sort((a, b) => parseInt(a.date.split('/')[1]) - parseInt(b.date.split('/')[1]));
-
     if (reimbursementListBody) {
         reimbursementListBody.innerHTML = list.length ? list.map(item => `
             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
@@ -450,123 +356,83 @@ function renderReimbursementList() {
                 <td style="padding:10px;text-align:right;">${item.price.toLocaleString()}원</td>
             </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:2rem;color:#94a3b8;">청구할 내역이 없습니다.</td></tr>';
     }
-
     if (reimbursementTotalEl) reimbursementTotalEl.textContent = `${total.toLocaleString()}원`;
 }
 
-async function sendReimbursementEmail() {
-    const year = state.selectedYear;
-    const month = state.selectedMonth + 1;
-
+// --- Email: show preview modal first, copy button is fresh user gesture (Android safe) ---
+function sendReimbursementEmail() {
+    const year = state.selectedYear, month = state.selectedMonth + 1;
     const list = [];
     let total = 0;
-    Object.entries(state.mealData).forEach(([dateKey, data]) => {
-        const [y, m, d] = dateKey.split('-').map(Number);
+    Object.entries(state.mealData).forEach(([key, data]) => {
+        const [y, m, d] = key.split('-').map(Number);
         if (y === year && m === month && data.type === 'outing') {
             list.push({ day: d, place: data.place || '-', price: data.price || 0 });
-            total += (data.price || 0);
+            total += data.price || 0;
         }
     });
     list.sort((a, b) => a.day - b.day);
 
-    const rowsHtml = list.map(item => {
-        const dateStr = `${String(month).padStart(2, '0')}월 ${String(item.day).padStart(2, '0')}일`;
-        return `<tr>
-          <td style="border:1px solid #ccc;padding:8px 14px;">${dateStr}</td>
-          <td style="border:1px solid #ccc;padding:8px 14px;">${item.place}</td>
-          <td style="border:1px solid #ccc;padding:8px 14px;text-align:right;">${item.price.toLocaleString()}원</td>
-        </tr>`;
-    }).join('');
-
-    const cafeteriaCount = Object.entries(state.mealData).filter(([dateKey, data]) => {
-        const [y, m] = dateKey.split('-').map(Number);
+    const cafeteriaCount = Object.entries(state.mealData).filter(([key, data]) => {
+        const [y, m] = key.split('-').map(Number);
         return y === year && m === month && data.type === 'cafeteria';
     }).length;
 
-    const htmlBody = `<p>안녕하세요 본부장님</p>
-<p>${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.</p>
-<p>감사합니다.</p>
-<p>구내식당: <strong>${cafeteriaCount}회</strong>&nbsp;&nbsp;&nbsp;외부식사: <strong>${list.length}회</strong></p>
-<table style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
-  <thead>
-    <tr style="background:#f0f0f0;">
-      <th style="border:1px solid #ccc;padding:8px 14px;">날짜</th>
-      <th style="border:1px solid #ccc;padding:8px 14px;">식당</th>
-      <th style="border:1px solid #ccc;padding:8px 14px;">금액</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${rowsHtml}
-    <tr style="background:#f5f5f5;font-weight:bold;">
-      <td style="border:1px solid #ccc;padding:8px 14px;" colspan="2">합계</td>
-      <td style="border:1px solid #ccc;padding:8px 14px;text-align:right;">${total.toLocaleString()}원</td>
-    </tr>
-  </tbody>
-</table>`;
-
-    const subject = `${month}월 식대 청구`;
-    const btn = document.getElementById('email-reimbursement-btn');
-
-    // Plain text fallback table
-    const plainRows = list.map(item =>
-        `${String(month).padStart(2, '0')}월 ${String(item.day).padStart(2, '0')}일\t${item.place}\t${item.price.toLocaleString()}원`
+    const plainRows = list.map(i =>
+        `${String(month).padStart(2, '0')}월 ${String(i.day).padStart(2, '0')}일\t${i.place}\t${i.price.toLocaleString()}원`
     ).join('\n');
     const plainBody =
         `안녕하세요 본부장님\n\n${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n구내식당: ${cafeteriaCount}회   외부식사: ${list.length}회\n\n날짜\t식당\t금액\n${plainRows}\n합계\t\t${total.toLocaleString()}원`;
 
-    const showSuccess = () => {
-        window.location.href = `mailto:ishan@wizvil.com?subject=${encodeURIComponent(subject)}`;
-        if (btn) {
-            const orig = btn.textContent;
-            btn.textContent = '✅ 복사됨! 메일 본문에 붙여넣기';
-            btn.style.background = '#10b981';
-            setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 4000);
-        }
-    };
+    const subject = encodeURIComponent(`${month}월 식대 청구`);
 
-    const showFallbackModal = () => {
-        const overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;padding:1rem;box-sizing:border-box;';
-        overlay.innerHTML = `
-            <div style="color:white;font-size:0.9rem;margin-bottom:0.8rem;">아래 내용을 길게 눌러 전체 선택 후 복사하세요.</div>
-            <textarea readonly style="flex:1;background:#1e1e2e;color:#cdd6f4;border:1px solid #585b70;border-radius:8px;padding:1rem;font-size:0.85rem;font-family:monospace;resize:none;">${plainBody}</textarea>
-            <button style="margin-top:0.8rem;padding:0.8rem;background:#FEB47B;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:bold;">닫기</button>
-        `;
-        overlay.querySelector('button').onclick = () => document.body.removeChild(overlay);
-        document.body.appendChild(overlay);
-        overlay.querySelector('textarea').select();
-    };
+    // Build modal UI
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;padding:1rem;box-sizing:border-box;gap:0.6rem;';
 
-    // Synchronous execCommand copy (preserves user gesture on Android)
-    const copyWithExecCommand = (text) => {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
-        document.body.appendChild(ta);
-        ta.focus();
+    const label = document.createElement('div');
+    label.style.cssText = 'color:#FEB47B;font-size:0.85rem;font-weight:bold;';
+    label.textContent = `📧 ${month}월 식대 청구 — "복사 후 메일 열기" 버튼을 눌러주세요`;
+
+    const ta = document.createElement('textarea');
+    ta.readOnly = true;
+    ta.value = plainBody;
+    ta.style.cssText = 'flex:1;background:#1e1e2e;color:#cdd6f4;border:1px solid #585b70;border-radius:8px;padding:1rem;font-size:0.82rem;font-family:monospace;resize:none;';
+
+    const btnCopy = document.createElement('button');
+    btnCopy.textContent = '📋 복사 후 메일 열기';
+    btnCopy.style.cssText = 'padding:0.9rem;background:linear-gradient(135deg,#FF7E5F,#FEB47B);border:none;border-radius:10px;font-size:1rem;font-weight:bold;cursor:pointer;color:white;';
+
+    // This onclick is a FRESH user gesture — clipboard always works here
+    btnCopy.onclick = () => {
         ta.select();
-        const ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-        return ok;
+        ta.setSelectionRange(0, ta.value.length); // for mobile
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (_) { }
+        if (!ok && navigator.clipboard) {
+            navigator.clipboard.writeText(plainBody).catch(() => { });
+            ok = true;
+        }
+        btnCopy.textContent = '✅ 복사됨!';
+        btnCopy.style.background = '#10b981';
+        setTimeout(() => {
+            window.location.href = `mailto:ishan@wizvil.com?subject=${subject}`;
+            setTimeout(() => { if (document.body.contains(overlay)) document.body.removeChild(overlay); }, 500);
+        }, 400);
     };
 
-    // Try HTML clipboard first (desktop), then execCommand (Android), then modal
-    (async () => {
-        let copied = false;
-        try {
-            const blob = new Blob([htmlBody], { type: 'text/html' });
-            await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
-            copied = true;
-        } catch (_) {
-            copied = copyWithExecCommand(plainBody);
-        }
+    const btnClose = document.createElement('button');
+    btnClose.textContent = '닫기';
+    btnClose.style.cssText = 'padding:0.7rem;background:rgba(255,255,255,0.1);border:none;border-radius:10px;font-size:0.9rem;cursor:pointer;color:white;';
+    btnClose.onclick = () => document.body.removeChild(overlay);
 
-        if (copied) {
-            showSuccess();
-        } else {
-            showFallbackModal();
-        }
-    })();
+    overlay.appendChild(label);
+    overlay.appendChild(ta);
+    overlay.appendChild(btnCopy);
+    overlay.appendChild(btnClose);
+    document.body.appendChild(overlay);
+    ta.focus();
+    ta.select();
 }
 
 function renderGlobalStats() {
