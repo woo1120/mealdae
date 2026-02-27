@@ -478,9 +478,15 @@ async function sendReimbursementEmail() {
         </tr>`;
     }).join('');
 
+    const cafeteriaCount = Object.entries(state.mealData).filter(([dateKey, data]) => {
+        const [y, m] = dateKey.split('-').map(Number);
+        return y === year && m === month && data.type === 'cafeteria';
+    }).length;
+
     const htmlBody = `<p>안녕하세요 본부장님</p>
 <p>${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.</p>
 <p>감사합니다.</p>
+<p>구내식당: <strong>${cafeteriaCount}회</strong>&nbsp;&nbsp;&nbsp;외부식사: <strong>${list.length}회</strong></p>
 <table style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
   <thead>
     <tr style="background:#f0f0f0;">
