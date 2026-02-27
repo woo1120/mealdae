@@ -363,12 +363,12 @@ function renderReimbursementList() {
 function sendReimbursementEmail() {
     const year = state.selectedYear, month = state.selectedMonth + 1;
     const list = [];
-    let total = 0;
+    let outingTotal = 0;
     Object.entries(state.mealData).forEach(([key, data]) => {
         const [y, m, d] = key.split('-').map(Number);
         if (y === year && m === month && data.type === 'outing') {
             list.push({ day: d, place: data.place || '-', price: data.price || 0 });
-            total += data.price || 0;
+            outingTotal += data.price || 0;
         }
     });
     list.sort((a, b) => a.day - b.day);
@@ -378,63 +378,63 @@ function sendReimbursementEmail() {
         return y === year && m === month && data.type === 'cafeteria';
     }).length;
 
-    const plainRows = list.map(i =>
-        `${String(month).padStart(2, '0')}월 ${String(i.day).padStart(2, '0')}일\t${i.place}\t${i.price.toLocaleString()}원`
-    ).join('\n');
     const cafeteriaTotal = cafeteriaCount * CAFETERIA_PRICE;
-    const grandTotal = cafeteriaTotal + total;
-    const plainBody =
-        `안녕하세요 본부장님\n\n${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n구내: ${cafeteriaCount}회 (${cafeteriaTotal.toLocaleString()}원), 외부: ${list.length}회 (${total.toLocaleString()}원)  총 ${grandTotal.toLocaleString()}원 / 예산 ${BUDGET_LIMIT.toLocaleString()}원\n\n날짜\t식당\t금액\n${plainRows}\n합계\t\t${total.toLocaleString()}원`;
+    const grandTotal = cafeteriaTotal + outingTotal;
+    const summaryLine = `구내: ${cafeteriaCount}회 (${cafeteriaTotal.toLocaleString()}원), 외부: ${list.length}회 (${outingTotal.toLocaleString()}원)  총 ${grandTotal.toLocaleString()}원 / 예산 ${BUDGET_LIMIT.toLocaleString()}원`;
+
+    // 1. HTML Body for Rich Copy (iPhone/Desktop)
+    const rowsHtml = list.map(i => `<tr><td style="border:1px solid #ccc;padding:8px 14px;">${month}/${i.day}</td><td style="border:1px solid #ccc;padding:8px 14px;">${i.place}</td><td style="border:1px solid #ccc;padding:8px 14px;text-align:right;">${i.price.toLocaleString()}원</td></tr>`).join('');
+    const htmlBody = `<p>안녕하세요 본부장님</p><p>${month}월 식대 영수증 보내드립니다.</p><p>감사합니다.</p><p>${summaryLine}</p><table style="border-collapse:collapse;font-family:sans-serif;font-size:14px;"><thead><tr style="background:#f0f0f0;"><th style="border:1px solid #ccc;padding:8px 14px;">날짜</th><th style="border:1px solid #ccc;padding:8px 14px;">식당</th><th style="border:1px solid #ccc;padding:8px 14px;">금액</th></tr></thead><tbody>${rowsHtml}<tr style="background:#f5f5f5;font-weight:bold;"><td style="border:1px solid #ccc;padding:8px 14px;" colspan="2">합계</td><td style="border:1px solid #ccc;padding:8px 14px;text-align:right;">${outingTotal.toLocaleString()}원</td></tr></tbody></table>`;
+
+    // 2. Plain Text Body for Fallback (Android/Mobile)
+    const plainList = list.map(i => `• ${String(month).padStart(2, '0')}/${String(i.day).padStart(2, '0')}: ${i.place} (${i.price.toLocaleString()}원)`).join('\n');
+    const plainBody = `안녕하세요 본부장님\n\n${month}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n${summaryLine}\n\n[외부 식사 내역]\n${plainList}\n\n합계: ${outingTotal.toLocaleString()}원`;
 
     const subject = encodeURIComponent(`${month}월 식대 청구`);
+    const mailtoUrl = `mailto:ishan@wizvil.com?subject=${subject}`;
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const btn = document.getElementById('email-reimbursement-btn');
 
-    // Build modal UI
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;padding:1rem;box-sizing:border-box;gap:0.6rem;';
-
-    const label = document.createElement('div');
-    label.style.cssText = 'color:#FEB47B;font-size:0.85rem;font-weight:bold;';
-    label.textContent = `📧 ${month}월 식대 청구 — "복사 후 메일 열기" 버튼을 눌러주세요`;
-
-    const ta = document.createElement('textarea');
-    ta.readOnly = true;
-    ta.value = plainBody;
-    ta.style.cssText = 'flex:1;background:#1e1e2e;color:#cdd6f4;border:1px solid #585b70;border-radius:8px;padding:1rem;font-size:0.82rem;font-family:monospace;resize:none;';
-
-    const btnCopy = document.createElement('button');
-    btnCopy.textContent = '📋 복사 후 메일 열기';
-    btnCopy.style.cssText = 'padding:0.9rem;background:linear-gradient(135deg,#FF7E5F,#FEB47B);border:none;border-radius:10px;font-size:1rem;font-weight:bold;cursor:pointer;color:white;';
-
-    // This onclick is a FRESH user gesture — clipboard always works here
-    btnCopy.onclick = () => {
-        ta.select();
-        ta.setSelectionRange(0, ta.value.length); // for mobile
-        let ok = false;
-        try { ok = document.execCommand('copy'); } catch (_) { }
-        if (!ok && navigator.clipboard) {
-            navigator.clipboard.writeText(plainBody).catch(() => { });
-            ok = true;
-        }
-        btnCopy.textContent = '✅ 복사됨!';
-        btnCopy.style.background = '#10b981';
-        setTimeout(() => {
-            window.location.href = `mailto:ishan@wizvil.com?subject=${subject}`;
-            setTimeout(() => { if (document.body.contains(overlay)) document.body.removeChild(overlay); }, 500);
-        }, 400);
+    const showSuccessFeedback = () => {
+        if (!btn) return;
+        const orig = btn.textContent;
+        btn.textContent = '✅ 복사 완료! 메일에 붙여넣기';
+        btn.style.background = '#10b981';
+        setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 3000);
     };
 
-    const btnClose = document.createElement('button');
-    btnClose.textContent = '닫기';
-    btnClose.style.cssText = 'padding:0.7rem;background:rgba(255,255,255,0.1);border:none;border-radius:10px;font-size:0.9rem;cursor:pointer;color:white;';
-    btnClose.onclick = () => document.body.removeChild(overlay);
+    // Synchronous copy for Android (execCommand)
+    const copySync = (text) => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.fixed = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        let ok = false; try { ok = document.execCommand('copy'); } catch (e) { }
+        document.body.removeChild(ta);
+        return ok;
+    };
 
-    overlay.appendChild(label);
-    overlay.appendChild(ta);
-    overlay.appendChild(btnCopy);
-    overlay.appendChild(btnClose);
-    document.body.appendChild(overlay);
-    ta.focus();
-    ta.select();
+    if (isAndroid) {
+        // Android: Avoid Blobs/ClipboardItem as they are async/unreliable. Use Sync copy.
+        copySync(plainBody);
+        window.location.href = mailtoUrl;
+        showSuccessFeedback();
+    } else {
+        // iPhone / Desktop: Try Rich HTML Copy
+        const type = "text/html";
+        const blob = new Blob([htmlBody], { type });
+        const data = [new ClipboardItem({ [type]: blob, ["text/plain"]: new Blob([plainBody], { type: "text/plain" }) })];
+        navigator.clipboard.write(data).then(() => {
+            window.location.href = mailtoUrl;
+            showSuccessFeedback();
+        }).catch(() => {
+            // Fallback for non-Android browsers that fail HTML copy
+            copySync(plainBody);
+            window.location.href = mailtoUrl;
+            showSuccessFeedback();
+        });
+    }
 }
 
 function renderGlobalStats() {
