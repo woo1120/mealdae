@@ -507,18 +507,50 @@ async function sendReimbursementEmail() {
     const subject = `${month}월 식대 청구`;
     const btn = document.getElementById('email-reimbursement-btn');
 
-    try {
-        const blob = new Blob([htmlBody], { type: 'text/html' });
-        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+    // Plain text fallback table
+    const plainRows = list.map(item =>
+        `${String(month).padStart(2, '0')}월 ${String(item.day).padStart(2, '0')}일\t${item.place}\t${item.price.toLocaleString()}원`
+    ).join('\n');
+    const plainBody =
+        `안녕하세요 본부장님\n\n${String(month).padStart(2, '0')}월 식대 영수증 보내드립니다.\n\n감사합니다.\n\n구내식당: ${cafeteriaCount}회   외부식사: ${list.length}회\n\n날짜\t식당\t금액\n${plainRows}\n합계\t\t${total.toLocaleString()}원`;
+
+    const showSuccess = () => {
         window.location.href = `mailto:ishan@wizvil.com?subject=${encodeURIComponent(subject)}`;
         if (btn) {
             const orig = btn.textContent;
-            btn.textContent = '✅ 복사됨! 메일 본문에 Ctrl+V';
+            btn.textContent = '✅ 복사됨! 메일 본문에 붙여넣기';
             btn.style.background = '#10b981';
             setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 4000);
         }
-    } catch (e) {
-        alert('클립보드 복사 권한이 없습니다. 브라우저에서 허용해 주세요.');
+    };
+
+    const showFallbackModal = () => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;padding:1rem;box-sizing:border-box;';
+        overlay.innerHTML = `
+            <div style="color:white;font-size:0.9rem;margin-bottom:0.8rem;">아래 내용을 길게 눌러 전체 선택 후 복사하세요.</div>
+            <textarea readonly style="flex:1;background:#1e1e2e;color:#cdd6f4;border:1px solid #585b70;border-radius:8px;padding:1rem;font-size:0.85rem;font-family:monospace;resize:none;">${plainBody}</textarea>
+            <button style="margin-top:0.8rem;padding:0.8rem;background:#FEB47B;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:bold;">닫기</button>
+        `;
+        overlay.querySelector('button').onclick = () => document.body.removeChild(overlay);
+        document.body.appendChild(overlay);
+        overlay.querySelector('textarea').select();
+    };
+
+    try {
+        // Tier 1: HTML clipboard (desktop Chrome / Edge)
+        const blob = new Blob([htmlBody], { type: 'text/html' });
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+        showSuccess();
+    } catch (_) {
+        try {
+            // Tier 2: Plain text clipboard (Android Chrome)
+            await navigator.clipboard.writeText(plainBody);
+            showSuccess();
+        } catch (__) {
+            // Tier 3: Show fallback modal for manual copy
+            showFallbackModal();
+        }
     }
 }
 
