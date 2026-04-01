@@ -103,6 +103,7 @@ nextMonthBtn.addEventListener('click', () => changeMonth(1));
 
 if (showReimbursementBtn) {
     showReimbursementBtn.addEventListener('click', () => {
+        if (receiptNameInput) receiptNameInput.value = state.userName;
         renderReimbursementList();
         reimbursementModal.style.display = 'flex';
     });
@@ -505,3 +506,34 @@ importFileInput.onchange = (e) => {
 };
 
 init();
+
+window.handleReceiptUpload = function(event, y, m, d) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!state.userName) {
+        alert('이 목록 상단의 [영수증 자동 변환 다운로드] 설정에 이름을 먼저 입력하고 저장해주세요.');
+        event.target.value = '';
+        return;
+    }
+
+    const ext = file.name.split('.').pop() || 'jpg';
+    const yy = String(y);
+    const mm = String(m).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    const fileName = `${state.userName}-${yy}${mm}${dd}.${ext}`;
+
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    const label = event.target.parentElement;
+    label.style.background = '#10b981';
+    label.style.borderColor = '#10b981';
+    label.innerHTML = `✔️ 완료<input type="file" style="display:none;" accept="image/*" onchange="window.handleReceiptUpload(event, ${y}, ${m}, ${d})">`;
+};
