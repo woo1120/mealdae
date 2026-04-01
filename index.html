@@ -23,7 +23,7 @@
     <div id="main-app" class="container hidden">
         <header>
             <h1 class="title">이번 달 식비 리포트 <span
-                    style="font-size:0.45em; color:#FEB47B; font-weight:400; vertical-align:middle;">v1.10</span></h1>
+                    style="font-size:0.45em; color:#FEB47B; font-weight:400; vertical-align:middle;">v1.11</span></h1>
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
                 <p id="welcome-msg" style="font-size: 0.8rem; color: var(--text-muted);"></p>
                 <p id="today-display" style="font-size: 0.75rem; color: var(--accent); font-weight: 500;"></p>
@@ -175,6 +175,13 @@
                 <div id="card-history-list" style="margin-bottom: 2rem;"></div>
                 <h4 style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 1rem;">식당 목록</h4>
                 <div id="place-history-list" style="margin-bottom: 2rem;"></div>
+                
+                <h4 style="font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem;">영수증 파일명 설정</h4>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem;">
+                    <input type="text" id="receipt-name-input" placeholder="이름 (예: 홍길동)" style="flex: 1; margin: 0; padding: 0.8rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); border-radius: 8px;">
+                    <button id="save-receipt-name-btn" class="btn btn-primary" style="flex: 0 0 auto; width: auto; padding: 0 1.2rem;">저장</button>
+                </div>
+
                 <h4 style="font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem;">데이터 백업/복구</h4>
                 <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
                     <button id="export-json-btn" class="btn"
@@ -228,6 +235,7 @@
                             <th style="padding: 10px; text-align: left;">식당명</th>
                             <th style="padding: 10px; text-align: left;">카드</th>
                             <th style="padding: 10px; text-align: right;">가격</th>
+                            <th style="padding: 10px; text-align: center;">영수증</th>
                         </tr>
                     </thead>
                     <tbody id="reimbursement-list-body">

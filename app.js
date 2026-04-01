@@ -4,6 +4,7 @@ const CAFETERIA_PRICE = 7770;
 
 let state = {
     userId: localStorage.getItem('meal_tracker_userid') || '',
+    userName: localStorage.getItem('meal_tracker_username') || '',
     currentDate: new Date(),
     selectedMonth: new Date().getMonth(),
     selectedYear: new Date().getFullYear(),
@@ -48,6 +49,8 @@ const historyModal = document.getElementById('history-modal');
 const historyModalClose = document.getElementById('history-modal-close');
 const cardHistoryList = document.getElementById('card-history-list');
 const placeHistoryList = document.getElementById('place-history-list');
+const receiptNameInput = document.getElementById('receipt-name-input');
+const saveReceiptNameBtn = document.getElementById('save-receipt-name-btn');
 const exportJsonBtn = document.getElementById('export-json-btn');
 const importJsonBtn = document.getElementById('import-json-btn');
 const importFileInput = document.getElementById('import-file-input');
@@ -123,8 +126,25 @@ if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
 
 function closeModal() { actionModal.style.display = 'none'; activeDateKey = null; }
 
-manageHistoryBtn.addEventListener('click', () => { renderHistoryManagement(); historyModal.style.display = 'flex'; });
+manageHistoryBtn.addEventListener('click', () => { 
+    if (receiptNameInput) receiptNameInput.value = state.userName;
+    renderHistoryManagement(); 
+    historyModal.style.display = 'flex'; 
+});
 if (historyModalClose) historyModalClose.addEventListener('click', () => historyModal.style.display = 'none');
+
+if (saveReceiptNameBtn) {
+    saveReceiptNameBtn.addEventListener('click', () => {
+        const name = receiptNameInput.value.trim();
+        if (name) {
+            state.userName = name;
+            localStorage.setItem('meal_tracker_username', name);
+            alert('영수증 파일명이 저장되었습니다.');
+        } else {
+            alert('이름을 입력해주세요.');
+        }
+    });
+}
 
 document.querySelectorAll('.action-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -342,11 +362,11 @@ function renderReimbursementList() {
     Object.entries(state.mealData).forEach(([key, data]) => {
         const [y, m, d] = key.split('-').map(Number);
         if (y === year && m === month && data.type === 'outing') {
-            list.push({ date: `${m}/${d}`, place: data.place || '-', card: data.card || '-', price: data.price || 0 });
+            list.push({ day: d, date: `${m}/${d}`, place: data.place || '-', card: data.card || '-', price: data.price || 0 });
             total += data.price || 0;
         }
     });
-    list.sort((a, b) => parseInt(a.date.split('/')[1]) - parseInt(b.date.split('/')[1]));
+    list.sort((a, b) => a.day - b.day);
     if (reimbursementListBody) {
         reimbursementListBody.innerHTML = list.length ? list.map(item => `
             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
@@ -354,7 +374,13 @@ function renderReimbursementList() {
                 <td style="padding:10px;">${item.place}</td>
                 <td style="padding:10px;">${item.card}</td>
                 <td style="padding:10px;text-align:right;">${item.price.toLocaleString()}원</td>
-            </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:2rem;color:#94a3b8;">청구할 내역이 없습니다.</td></tr>';
+                <td style="padding:10px;text-align:center;">
+                    <label class="btn" style="padding: 4px 8px; font-size: 0.7rem; background: rgba(254, 180, 123, 0.2); border: 1px solid var(--accent); color: white; cursor: pointer;">
+                        첨부
+                        <input type="file" style="display:none;" accept="image/*" onchange="window.handleReceiptUpload(event, ${year}, ${month}, ${item.day})">
+                    </label>
+                </td>
+            </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#94a3b8;">청구할 내역이 없습니다.</td></tr>';
     }
     if (reimbursementTotalEl) reimbursementTotalEl.textContent = `${total.toLocaleString()}원`;
 }
