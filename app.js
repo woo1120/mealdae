@@ -352,6 +352,17 @@ function updateDashboard() {
     totalReimbursementEl.textContent = `${reimb.toLocaleString()}원`;
     const pct = Math.min(100, Math.floor(spent / BUDGET_LIMIT * 100));
     usagePercentEl.textContent = `${pct}%`; budgetProgress.style.width = `${pct}%`;
+    
+    const rem = BUDGET_LIMIT - spent;
+    for (let n = 1; n <= 3; n++) {
+        const guideEl = document.getElementById(`guide-${n}`);
+        if (guideEl) {
+            const val = Math.floor((rem + (n * CAFETERIA_PRICE)) / n);
+            guideEl.textContent = val > 0 ? `${val.toLocaleString()}원` : '초과';
+            guideEl.style.color = val > 0 ? 'var(--text-white)' : 'var(--danger)';
+        }
+    }
+
     const t = new Date();
     todayDisplayEl.textContent = `오늘은 ${t.getMonth() + 1}월 ${t.getDate()}일(${['일', '월', '화', '수', '목', '금', '토'][t.getDay()]})`;
 }

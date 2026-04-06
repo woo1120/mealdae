@@ -23,7 +23,7 @@
     <div id="main-app" class="container hidden">
         <header>
             <h1 class="title">이번 달 식비 리포트 <span
-                    style="font-size:0.45em; color:#FEB47B; font-weight:400; vertical-align:middle;">v1.12</span></h1>
+                    style="font-size:0.45em; color:#FEB47B; font-weight:400; vertical-align:middle;">v1.13</span></h1>
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
                 <p id="welcome-msg" style="font-size: 0.8rem; color: var(--text-muted);"></p>
                 <p id="today-display" style="font-size: 0.75rem; color: var(--accent); font-weight: 500;"></p>
@@ -68,6 +68,24 @@
             </div>
             <div class="progress-container">
                 <div class="progress-bar" id="budget-progress"></div>
+            </div>
+        </div>
+
+        <div class="glass-card outing-guide" style="margin-bottom: 1.5rem; padding: 1rem;">
+            <h4 style="font-size: 0.85rem; color: var(--accent); margin-bottom: 0.8rem; text-align: center;">💡 남은 예산 기준, 1회당 외식 적정 금액</h4>
+            <div style="display: flex; justify-content: space-between; text-align: center; font-size: 0.75rem;">
+                <div style="flex: 1; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px; margin-right: 0.5rem;">
+                    <div style="color: var(--text-muted); margin-bottom: 0.3rem;">외식 1회 더하면</div>
+                    <div id="guide-1" style="font-weight: bold; color: var(--text-white);">0원</div>
+                </div>
+                <div style="flex: 1; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px; margin-right: 0.5rem;">
+                    <div style="color: var(--text-muted); margin-bottom: 0.3rem;">외식 2회 더하면</div>
+                    <div id="guide-2" style="font-weight: bold; color: var(--text-white);">0원</div>
+                </div>
+                <div style="flex: 1; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="color: var(--text-muted); margin-bottom: 0.3rem;">외식 3회 더하면</div>
+                    <div id="guide-3" style="font-weight: bold; color: var(--text-white);">0원</div>
+                </div>
             </div>
         </div>
 
