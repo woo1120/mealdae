@@ -235,6 +235,19 @@ header {
   border: 1px solid var(--secondary);
 }
 
+.day.cafeteria.locked {
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 0 1px rgba(254, 180, 123, 0.3), 0 0 10px rgba(254, 180, 123, 0.2);
+}
+
+.day.cafeteria.locked::after {
+  content: '🔒';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.65rem;
+}
+
 .day.outing {
   background: rgba(255, 126, 95, 0.2);
   border: 1px solid var(--primary);

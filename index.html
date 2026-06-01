@@ -23,7 +23,7 @@
     <div id="main-app" class="container hidden">
         <header>
             <h1 class="title">이번 달 식비 리포트 <span
-                    style="font-size:0.45em; color:#FEB47B; font-weight:400; vertical-align:middle;">v1.13</span></h1>
+                    style="font-size:0.45em; color:#FEB47B; font-weight:400; vertical-align:middle;">v1.14</span></h1>
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
                 <p id="welcome-msg" style="font-size: 0.8rem; color: var(--text-muted);"></p>
                 <p id="today-display" style="font-size: 0.75rem; color: var(--accent); font-weight: 500;"></p>
@@ -118,6 +118,11 @@
         <div class="glass-card modal-content" style="max-width: 380px;">
             <h3 id="modal-date-display" style="margin-bottom: 1.2rem; text-align: center;">식사 선택</h3>
 
+            <!-- Lock Status Banner -->
+            <div id="lock-status-banner" class="hidden" style="margin-bottom: 1rem; padding: 0.75rem; border: 1px solid var(--accent); border-radius: 10px; color: var(--accent); background: rgba(254, 180, 123, 0.12); font-size: 0.8rem; text-align: center;">
+                🔒 확정된 구내식당 기록입니다.
+            </div>
+
             <div id="action-grid-main" class="action-grid"
                 style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.5rem;">
                 <button class="btn action-btn" data-type="cafeteria"
@@ -172,6 +177,8 @@
 
             <div style="display: flex; flex-direction: column; gap: 0.8rem;">
                 <button class="btn btn-primary hidden" id="modal-save-outing">🍕 외식 기록 저장</button>
+                <button class="btn" id="modal-lock-btn" style="background: var(--accent); color: var(--bg-dark); font-weight: bold; display: none;">🔒 구내식당 확정 (변경 방지)</button>
+                <button class="btn" id="modal-unlock-btn" style="background: rgba(255, 255, 255, 0.2); color: white; display: none;">🔓 잠금 해제</button>
                 <div style="display: flex; gap: 0.5rem;">
                     <button class="btn" style="flex: 1; background: rgba(255,255,255,0.05); color: white;"
                         id="modal-close">닫기</button>

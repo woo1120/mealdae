@@ -19,6 +19,9 @@ const userIdInput = document.getElementById('user-id-input');
 const loginBtn = document.getElementById('login-btn');
 const welcomeMsg = document.getElementById('welcome-msg');
 const todayDisplayEl = document.getElementById('today-display');
+const lockStatusBanner = document.getElementById('lock-status-banner');
+const modalLockBtn = document.getElementById('modal-lock-btn');
+const modalUnlockBtn = document.getElementById('modal-unlock-btn');
 
 const calendarGrid = document.querySelector('.calendar-grid');
 const monthDisplay = document.getElementById('current-month-display');
@@ -76,8 +79,64 @@ const budgetProgress = document.getElementById('budget-progress');
 
 let activeDateKey = null;
 
+// --- Helper Functions for Locked Cafeteria ---
+function isLockedCafeteria(meal) {
+    return meal && meal.type === 'cafeteria' && meal.isLocked === true;
+}
+
+function normalizeMealData(mealData) {
+    if (!mealData) return {};
+    Object.keys(mealData).forEach(key => {
+        const meal = mealData[key];
+        if (meal) {
+            meal.isLocked = meal.type === 'cafeteria' ? meal.isLocked === true : false;
+        }
+    });
+    return mealData;
+}
+
+async function lockCafeteria(dateKey) {
+    const meal = state.mealData[dateKey];
+    if (meal && meal.type === 'cafeteria') {
+        meal.isLocked = true;
+        meal.lockedAt = new Date().toISOString();
+        await saveUserData();
+        renderCalendar();
+        updateDashboard();
+        closeModal();
+    }
+}
+
+async function unlockCafeteria(dateKey) {
+    const meal = state.mealData[dateKey];
+    if (meal && meal.type === 'cafeteria') {
+        meal.isLocked = false;
+        if (meal.lockedAt) delete meal.lockedAt;
+        await saveUserData();
+        renderCalendar();
+        updateDashboard();
+        handleDayClick(dateKey); // Refresh modal UI
+    }
+}
+
 // --- Initialization ---
-async function init() { if (state.userId) showApp(); }
+async function init() { 
+    if (modalLockBtn) {
+        modalLockBtn.addEventListener('click', () => {
+            if (activeDateKey) lockCafeteria(activeDateKey);
+        });
+    }
+    if (modalUnlockBtn) {
+        modalUnlockBtn.addEventListener('click', () => {
+            if (activeDateKey) {
+                if (confirm('구내식당 확정 잠금을 해제하시겠습니까?')) {
+                    unlockCafeteria(activeDateKey);
+                }
+            }
+        });
+    }
+    if (state.userId) showApp(); 
+}
 
 async function showApp() {
     loginOverlay.classList.add('hidden');
@@ -149,6 +208,10 @@ if (saveReceiptNameBtn) {
 
 document.querySelectorAll('.action-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+        if (activeDateKey && isLockedCafeteria(state.mealData[activeDateKey])) {
+            alert('확정된 구내식당 기록입니다. 수정하려면 먼저 잠금을 해제해 주세요.');
+            return;
+        }
         const type = btn.getAttribute('data-type');
         if (type === 'toggle-outing') {
             actionGridMain.classList.add('hidden');
@@ -167,6 +230,10 @@ timeBtns.forEach(btn => btn.addEventListener('click', () => {
 }));
 
 modalSaveOutingBtn.addEventListener('click', () => {
+    if (activeDateKey && isLockedCafeteria(state.mealData[activeDateKey])) {
+        alert('확정된 구내식당 기록입니다. 수정하려면 먼저 잠금을 해제해 주세요.');
+        return;
+    }
     const price = parseInt(priceInput.value);
     const place = placeInput.value.trim();
     const card = cardInput.value.trim();
@@ -181,6 +248,10 @@ modalSaveOutingBtn.addEventListener('click', () => {
 
 modalDeleteBtn.addEventListener('click', () => {
     if (activeDateKey) {
+        if (isLockedCafeteria(state.mealData[activeDateKey])) {
+            alert('확정된 구내식당 기록입니다. 수정하려면 먼저 잠금을 해제해 주세요.');
+            return;
+        }
         const [y, m, d] = activeDateKey.split('-').map(Number);
         const dow = new Date(y, m - 1, d).getDay();
         const type = (dow === 0 || dow === 6) ? 'holiday' : 'cafeteria';
@@ -208,6 +279,9 @@ function renderCalendar() {
         const dayNum = document.createElement('span'); dayNum.textContent = d; dayEl.appendChild(dayNum);
         if (dayData) {
             dayEl.classList.add(dayData.type);
+            if (dayData.type === 'cafeteria' && dayData.isLocked === true) {
+                dayEl.classList.add('locked');
+            }
             const priceEl = document.createElement('span');
             priceEl.className = 'price';
             priceEl.textContent = (dayData.price && dayData.price > 0) ? `${dayData.price.toLocaleString()}원` : '';
@@ -224,22 +298,50 @@ function handleDayClick(dateKey) {
     const current = state.mealData[dateKey];
     const [y, m, d] = dateKey.split('-').map(Number);
     modalDateDisplay.textContent = `${m}월 ${d}일 식사 선택`;
-    actionGridMain.classList.remove('hidden');
-    outingInputSection.classList.add('hidden');
-    modalSaveOutingBtn.classList.add('hidden');
-    if (current && current.type === 'outing') {
-        priceInput.value = current.price || 10000;
-        placeInput.value = current.place || '';
-        cardInput.value = current.card || '';
-        timeBtns.forEach(b => b.getAttribute('data-time') === (current.time || 'lunch') ? b.classList.add('active') : b.classList.remove('active'));
+
+    // Reset controls visibility
+    lockStatusBanner.classList.add('hidden');
+    modalLockBtn.style.display = 'none';
+    modalUnlockBtn.style.display = 'none';
+    modalDeleteBtn.style.display = 'block';
+
+    const locked = isLockedCafeteria(current);
+
+    if (locked) {
+        // Lock UI State
+        lockStatusBanner.classList.remove('hidden');
+        modalUnlockBtn.style.display = 'block';
+        modalDeleteBtn.style.display = 'none'; // Lock deletion
+        
         actionGridMain.classList.add('hidden');
-        outingInputSection.classList.remove('hidden');
-        modalSaveOutingBtn.classList.remove('hidden');
+        outingInputSection.classList.add('hidden');
+        modalSaveOutingBtn.classList.add('hidden');
     } else {
-        priceInput.value = 10000; placeInput.value = '';
-        cardInput.value = state.history.cards.length > 0 ? state.history.cards[state.history.cards.length - 1] : '';
-        timeBtns.forEach(b => b.classList.remove('active'));
-        if (timeBtns[0]) timeBtns[0].classList.add('active');
+        actionGridMain.classList.remove('hidden');
+        outingInputSection.classList.add('hidden');
+        modalSaveOutingBtn.classList.add('hidden');
+
+        // Show lock option only for unlocked cafeteria meal on weekdays
+        const dow = new Date(y, m - 1, d).getDay();
+        const isWeekday = dow !== 0 && dow !== 6;
+        if (current && current.type === 'cafeteria' && isWeekday) {
+            modalLockBtn.style.display = 'block';
+        }
+
+        if (current && current.type === 'outing') {
+            priceInput.value = current.price || 10000;
+            placeInput.value = current.place || '';
+            cardInput.value = current.card || '';
+            timeBtns.forEach(b => b.getAttribute('data-time') === (current.time || 'lunch') ? b.classList.add('active') : b.classList.remove('active'));
+            actionGridMain.classList.add('hidden');
+            outingInputSection.classList.remove('hidden');
+            modalSaveOutingBtn.classList.remove('hidden');
+        } else {
+            priceInput.value = 10000; placeInput.value = '';
+            cardInput.value = state.history.cards.length > 0 ? state.history.cards[state.history.cards.length - 1] : '';
+            timeBtns.forEach(b => b.classList.remove('active'));
+            if (timeBtns[0]) timeBtns[0].classList.add('active');
+        }
     }
     actionModal.style.display = 'flex';
 }
@@ -289,8 +391,12 @@ document.addEventListener('mousedown', (e) => {
 });
 
 // --- Data ---
-async function saveMeal(dateKey, type, price, place = '', card = '', time = 'lunch') {
-    state.mealData[dateKey] = { type, price, place, card, time };
+async function saveMeal(dateKey, type, price, place = '', card = '', time = 'lunch', force = false) {
+    if (!force && isLockedCafeteria(state.mealData[dateKey])) {
+        alert('확정된 구내식당 기록입니다. 수정하려면 먼저 잠금을 해제해 주세요.');
+        return;
+    }
+    state.mealData[dateKey] = { type, price, place, card, time, isLocked: false };
     await saveUserData(); renderCalendar(); updateDashboard();
 }
 
@@ -310,11 +416,23 @@ async function loadUserData() {
     if (window.location.protocol !== 'file:') {
         try {
             const r = await fetch(`/api/data?userId=${encodeURIComponent(state.userId)}`);
-            if (r.ok) { const d = await r.json(); if (d.mealData) { state.mealData = d.mealData; state.history = d.history || { places: [], cards: [] }; } }
+            if (r.ok) { 
+                const d = await r.json(); 
+                if (d.mealData) { 
+                    state.mealData = normalizeMealData(d.mealData); 
+                    state.history = d.history || { places: [], cards: [] }; 
+                } 
+            }
         } catch (e) { }
     }
     const saved = localStorage.getItem(`meal_data_${state.userId}`);
-    if (saved) { const d = JSON.parse(saved); if (!Object.keys(state.mealData).length) { state.mealData = d.mealData || {}; state.history = d.history || { places: [], cards: [] }; } }
+    if (saved) { 
+        const d = JSON.parse(saved); 
+        if (!Object.keys(state.mealData).length) { 
+            state.mealData = normalizeMealData(d.mealData || {}); 
+            state.history = d.history || { places: [], cards: [] }; 
+        } 
+    }
     if (!state.history.places || !state.history.places.length) {
         const p = new Set(), c = new Set();
         Object.values(state.mealData).forEach(m => { if (m.place) p.add(m.place); if (m.card) c.add(m.card); });
@@ -331,7 +449,13 @@ function initializeMonthData() {
     for (let d = 1; d <= cnt; d++) {
         const key = `${state.selectedYear}-${String(state.selectedMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const dow = new Date(state.selectedYear, state.selectedMonth, d).getDay();
-        state.mealData[key] = (dow === 0 || dow === 6) ? { type: 'holiday', price: 0 } : { type: 'cafeteria', price: CAFETERIA_PRICE };
+        
+        // Preserve locked cafeteria record from being overwritten
+        if (isLockedCafeteria(state.mealData[key])) {
+            continue;
+        }
+        
+        state.mealData[key] = (dow === 0 || dow === 6) ? { type: 'holiday', price: 0, isLocked: false } : { type: 'cafeteria', price: CAFETERIA_PRICE, isLocked: false };
     }
     saveUserData();
 }
@@ -511,7 +635,7 @@ importFileInput.onchange = (e) => {
     const f = e.target.files[0]; if (!f) return;
     const r = new FileReader(); r.onload = (ev) => {
         const d = JSON.parse(ev.target.result);
-        state.mealData = d.mealData; state.history = d.history;
+        state.mealData = normalizeMealData(d.mealData); state.history = d.history;
         saveUserData(); renderCalendar(); updateDashboard();
     }; r.readAsText(f);
 };
